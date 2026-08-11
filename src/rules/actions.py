@@ -52,7 +52,7 @@ Modifies a GameState depending on what action was selected.
 Actions:
     "END_TURN"                  - switches to the other player. increments turn count by 1. resets the supporter_played flag.
     "ATTACH_ENERGY_TO_ACTIVE"   - increments energy counter of active pokemon by 1. Empties the energy zone so attaching happens only once per turn.
-    "ATTACK_WITH_ACTIVE"        - decrease opponent's HP by the amount of damage the attack inflicts. ends turn (see END_TURN).
+    "ATTACK_WITH_ACTIVE"        - decrease opponent's HP by the amount of damage the attack inflicts. check for knockout. end turn (see END_TURN).
     """
     
     nstate = copy_state(state)
@@ -72,6 +72,20 @@ Actions:
 
     elif action == "ATTACK_WITH_ACTIVE":
         opponent.active.hp -= player.active.damage
+
+        if opponent.active.hp <= 0:
+            if opponent.active.is_ex:
+                player.points += 2
+            else:
+                player.points += 1
+            
+            opponent.discard.append(opponent.active)
+            opponent.active = None
+            
+            if player.points >= 3:
+                nstate.game_over = True
+                nstate.winner = current_player
+
         nstate.current_player = (current_player % 2) + 1
         nstate.turn += 1
         nstate.supporter_played = False
