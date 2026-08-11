@@ -23,7 +23,8 @@ Actions:
     actions = ["END_TURN"]
 
     if player.active is not None:
-        actions.append("ATTACK_WITH_ACTIVE") #implement energy requirements later
+        if player.active.attached_energy >= player.active.attack_cost:        
+            actions.append("ATTACK_WITH_ACTIVE")
         
         if player.energy_available:
             actions.append("ATTACH_ENERGY_TO_ACTIVE")

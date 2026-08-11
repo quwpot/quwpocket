@@ -27,12 +27,14 @@ Pokemons can attack, take damage and get KO'd. Energy cards may get attached to 
 Attributes:
     hp: current health points. start at max, decrease when damaged.
     damage: amount of hp enemy pokemon lose if they get attacked
+    attack_cost: the amount of energy that needs to be attached in order for the pokemon to be able to use its attack and do damage.
     ex pokemon give two points when KO'd.
     attached_energy: amount of energy tokens (currency required to unleash attacks) are currently equipped. starts at 0 and increases as game progresses.
     """
 
     hp: int
     damage: int
+    attack_cost: int = 0
     is_ex: bool = False
     attached_energy: int = 0
 
