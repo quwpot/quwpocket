@@ -1,4 +1,5 @@
 from copy import deepcopy
+from src.models.game_state import GameState 
 
 def generate_actions(state: GameState) -> list[str]:
 
@@ -27,18 +28,18 @@ Actions:
         if player.energy_available:
             actions.append("ATTACH_ENERGY_TO_ACTIVE")
 
-    for card in player.hand:
+    for i, card in enumerate(player.hand):
         if card.card_type == "Pokemon":
-            if len(player.bench) is not 3:
-                actions.append("PLAY_CARD_" + str(player.hand.index(card)))
+            if len(player.bench) != 3:
+                actions.append(f"PLAY_CARD_{i}")
         
         elif card.card_type == "Trainer":
             if card.is_supporter:
-                if state.supporter_played:
-                    actions.append("PLAY_CARD_" + str(player.hand.index(card)))
+                if not state.supporter_played:
+                    actions.append(f"PLAY_CARD_{i}")
 
             else:
-                actions.append("PLAY_CARD_" + str(player.hand.index(card)))
+                actions.append(f"PLAY_CARD_{i}")
 
     return actions
 
@@ -72,6 +73,7 @@ Actions:
         opponent.active.hp -= player.active.damage
         nstate.current_player = (current_player % 2) + 1
         nstate.turn += 1
+        nstate.supporter_played = False
 
     return nstate
 
