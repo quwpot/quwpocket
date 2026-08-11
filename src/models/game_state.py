@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from typing import List
-from src.models.card import Pokemon, Trainer
 
 @dataclass
 class PlayerState:

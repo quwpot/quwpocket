@@ -1,4 +1,5 @@
 from dataclasses import dataclass #dataclasses are classes for storing data (duh) and assist by automatically generating stuff like __init__ or __repr__
+from src.models.effect import Effect
 
 @dataclass
 class Card:
@@ -31,9 +32,9 @@ Attributes:
     ex pokemon give two points when KO'd.
     attached_energy: amount of energy tokens (currency required to unleash attacks) are currently equipped. starts at 0 and increases as game progresses.
     """
-
-    hp: int
+    max_hp: int
     damage: int
+    hp: int
     attack_cost: int = 0
     is_ex: bool = False
     attached_energy: int = 0
@@ -48,5 +49,6 @@ class Trainer(Card):
 Trainer cards are non-Pokemon cards. Only one Supporter card may be played per turn
     """
 
-    description: str #will implement later
+    description: str
+    effect: Effect
     is_supporter: bool = False

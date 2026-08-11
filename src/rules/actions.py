@@ -1,5 +1,6 @@
 from copy import deepcopy
-from src.models.game_state import GameState 
+from src.models.game_state import GameState
+from src.models.effects import apply_heal, apply_draw, apply_attach_energy
 
 def generate_actions(state: GameState) -> list[str]:
 
@@ -53,6 +54,7 @@ Actions:
     "END_TURN"                  - switches to the other player. increments turn count by 1. resets the supporter_played flag.
     "ATTACH_ENERGY_TO_ACTIVE"   - increments energy counter of active pokemon by 1. Empties the energy zone so attaching happens only once per turn.
     "ATTACK_WITH_ACTIVE"        - decrease opponent's HP by the amount of damage the attack inflicts. check for knockout. end turn (see END_TURN).
+    "PLAY_CARD_N"               - Apply effect, move to discard pile.
     """
     
     nstate = copy_state(state)
@@ -89,6 +91,36 @@ Actions:
         nstate.current_player = (current_player % 2) + 1
         nstate.turn += 1
         nstate.supporter_played = False
+
+    elif action.startswith("PLAY_CARD_"):
+        card_index = int(action.split("_")[-1])
+        card = player.hand[card_index]
+        print(f"{card.name} gets played.")
+     
+        if card.effect.effect_type == "heal":
+            target = card.effect.target
+            amount = card.effect.amount
+            print(f"{target} gets healed by {amount}")
+            nstate = apply_heal(nstate, target, amount)
+            player = nstate.player1 if current_player == 1 else nstate.player2
+
+        elif card.effect.effect_type == "draw":
+            amount = card.effect.amount
+            nstate = apply_draw(nstate, amount)
+            player = nstate.player1 if current_player == 1 else nstate.player2
+
+        elif card.effect.effect_type == "attach_energy":
+            target = card.effect.target
+            amount = card.effect.amount
+            energy_type = "Fire"
+            nstate = apply_attach_energy(nstate, target, amount, energy_type)
+            player = nstate.player1 if current_player == 1 else nstate.player2
+        
+        if card.is_supporter:
+            nstate.supporter_played = True        
+
+        player.discard.append(player.hand.pop(card_index))
+        print(f"Card {card_index} gets removed from {player.hand}.")
 
     return nstate
 
