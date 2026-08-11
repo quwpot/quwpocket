@@ -1,9 +1,9 @@
 from src.models.card import Pokemon
 
-PIKACHU = Pokemon(
-    name="Pikachu",
+CHARMANDER = Pokemon(
+    name="Charmander",
     card_type="pokemon",
-    typing="Electric",
+    typing="Fire",
     max_hp=60,
     hp=60,
     damage=20,

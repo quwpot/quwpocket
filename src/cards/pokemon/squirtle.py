@@ -1,12 +1,12 @@
 from src.models.card import Pokemon
 
-PIKACHU = Pokemon(
-    name="Pikachu",
+SQUIRTLE = Pokemon(
+    name="Squirtle",
     card_type="pokemon",
-    typing="Electric",
+    typing="Water",
     max_hp=60,
     hp=60,
-    damage=20,
+    damage=15,
     attack_cost=1,
     is_ex=False
 )

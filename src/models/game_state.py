@@ -51,14 +51,23 @@ Attributes:
     winner: int | None
     supporter_played: bool = False
 
-def create_initial_state(energy_type: str = "Fire") -> GameState:
+def create_initial_state(player1_deck: list[card], player2_deck: list[Card], energy_type: str = "Fire") -> GameState:
     
     """
 Helper function that sets up a game by initializing a default GameState.
     """
 
-    p1 = PlayerState(energy_type=energy_type)
-    p2 = PlayerState(energy_type=energy_type)
+    p1 = PlayerState(energy_type=energy_type, deck=player1_deck)
+    p2 = PlayerState(energy_type=energy_type, deck=player2_deck)
+
+    for player in [p1, p2]:
+        for i in range(5):
+            player.hand.append(player.deck.pop())
+        for i, card in enumerate(player.hand):
+            if card.card_type == "pokemon":
+                player.active = player.hand.pop(i)
+                break
+
     return GameState(
         player1=p1,
         player2=p2,
