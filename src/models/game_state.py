@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 @dataclass
 class PlayerState:
@@ -25,6 +25,7 @@ Attributes:
     points: int = 0
     energy_type: str = ""
     energy_available: bool = False
+    damage_boost: Optional[int] = 0
 
 @dataclass
 class GameState:

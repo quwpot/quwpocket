@@ -1,6 +1,6 @@
 from copy import deepcopy
 from src.models.game_state import GameState
-from src.models.effects import apply_heal, apply_draw, apply_attach_energy
+from src.models.effects import *
 
 def generate_actions(state: GameState) -> list[str]:
 
@@ -64,6 +64,7 @@ Actions:
     opponent = nstate.player1 if current_player == 2 else nstate.player2   
 
     if action == "END_TURN":
+        player.damage_boost = 0
         nstate.current_player = (current_player % 2) + 1
         nstate.turn += 1
         nstate.supporter_played = False
@@ -73,7 +74,7 @@ Actions:
         player.energy_available = False
 
     elif action == "ATTACK_WITH_ACTIVE":
-        opponent.active.hp -= player.active.damage
+        opponent.active.hp -= (player.active.damage + player.damage_boost)
 
         if opponent.active.hp <= 0:
             if opponent.active.is_ex:
@@ -88,6 +89,7 @@ Actions:
                 nstate.game_over = True
                 nstate.winner = current_player
 
+        player.damage_boost = 0        
         nstate.current_player = (current_player % 2) + 1
         nstate.turn += 1
         nstate.supporter_played = False
@@ -98,26 +100,20 @@ Actions:
         print(f"{card.name} gets played.")
      
         if card.effect.effect_type == "heal":
-            target = card.effect.target
-            amount = card.effect.amount
-            print(f"{target} gets healed by {amount}")
-            nstate = apply_heal(nstate, target, amount)
-            player = nstate.player1 if current_player == 1 else nstate.player2
-
+            nstate = apply_heal(nstate, card)
         elif card.effect.effect_type == "draw":
-            amount = card.effect.amount
-            nstate = apply_draw(nstate, amount)
-            player = nstate.player1 if current_player == 1 else nstate.player2
-
+            nstate = apply_draw(nstate, card)
         elif card.effect.effect_type == "attach_energy":
-            target = card.effect.target
-            amount = card.effect.amount
-            energy_type = "Fire"
-            nstate = apply_attach_energy(nstate, target, amount, energy_type)
-            player = nstate.player1 if current_player == 1 else nstate.player2
+            nstate = apply_attach_energy(nstate, card)
+        elif card.effect.effect_type == "damage_boost":
+            nstate = apply_damage_boost(nstate, card)
+        elif card.effect.effect_type == "watch_opponent_hand_cards":
+            nstate = apply_watch_opponent_hand_cards(nstate, card)
         
         if card.is_supporter:
-            nstate.supporter_played = True        
+            nstate.supporter_played = True
+
+        player = nstate.player1 if current_player == 1 else nstate.player2       
 
         player.discard.append(player.hand.pop(card_index))
         print(f"Card {card_index} gets removed from {player.hand}.")

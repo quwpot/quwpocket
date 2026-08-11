@@ -30,11 +30,13 @@ Attributes:
     damage: amount of hp enemy pokemon lose if they get attacked
     attack_cost: the amount of energy that needs to be attached in order for the pokemon to be able to use its attack and do damage.
     ex pokemon give two points when KO'd.
+    typing: "fire", "water", "grass", ... Important for calculating weakness later.
     attached_energy: amount of energy tokens (currency required to unleash attacks) are currently equipped. starts at 0 and increases as game progresses.
     """
     max_hp: int
     damage: int
     hp: int
+    typing: str
     attack_cost: int = 0
     is_ex: bool = False
     attached_energy: int = 0
