@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 from copy import deepcopy
+from random import randrange
 
 @dataclass
 class PlayerState:
@@ -51,6 +52,7 @@ Attributes:
     game_over: bool
     winner: int | None
     supporter_played: bool = False
+    is_first_turn: bool = False
 
 def create_initial_state(player1_deck: list[card], player2_deck: list[Card], energy_type: str = "Fire", debug: bool = False) -> GameState:
     
@@ -60,7 +62,9 @@ Helper function that sets up a game by initializing a default GameState.
 1. sets up two PlayerStates with the respective decks
 2. puts a basic into opening hand
 3. draws the other four cards
-4. starts the first turn
+4. Flips coin who goes first
+5. Sets is_first_turn flag (player going first gets no energy on turn 1)
+5. starts the first turn
     """
 
     from src.rules.actions import start_turn
@@ -96,6 +100,12 @@ Helper function that sets up a game by initializing a default GameState.
     supporter_played=False
     )
 
+    gs.current_player = randrange(1, 2, 1)
+    if debug:
+        print(f"Player {current_player} goes first.")
+
+    gs.is_first_turn = True
+    
     state = start_turn(gs)
 
     return state

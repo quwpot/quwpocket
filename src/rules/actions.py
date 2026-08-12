@@ -196,4 +196,9 @@ Apply start-of-turn effects (mutates the state in place).
     player.active.turns_in_play += 1
     for pokemon in player.bench:
         pokemon.turns_in_play += 1
+
+    if state.is_first_turn:
+        player.energy_available = False
+        state.is_first_turn = False
+
     return state
