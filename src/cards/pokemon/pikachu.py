@@ -4,6 +4,7 @@ PIKACHU = Pokemon(
     name="Pikachu",
     card_type="pokemon",
     typing="Electric",
+    stage="basic",
     max_hp=60,
     hp=60,
     damage=20,

@@ -4,6 +4,7 @@ SQUIRTLE = Pokemon(
     name="Squirtle",
     card_type="pokemon",
     typing="Water",
+    stage="basic",
     max_hp=60,
     hp=60,
     damage=15,

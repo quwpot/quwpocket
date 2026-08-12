@@ -4,6 +4,7 @@ BULBASAUR = Pokemon(
     name="Bulbasaur",
     card_type="pokemon",
     typing="Grass",
+    stage="basic",
     max_hp=70,
     hp=70,
     damage=15,

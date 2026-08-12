@@ -4,6 +4,7 @@ CHARMANDER = Pokemon(
     name="Charmander",
     card_type="pokemon",
     typing="Fire",
+    stage="basic",
     max_hp=60,
     hp=60,
     damage=20,

@@ -2,7 +2,7 @@ from copy import deepcopy
 from src.models.game_state import GameState
 from src.models.effects import *
 
-def generate_actions(state: GameState) -> list[str]:
+def generate_actions(state: GameState, debug: bool = False) -> list[str]:
 
     """
 Returns a list of all possible actions (draw card, attach energy, attack, ...) from a current GameState.
@@ -31,9 +31,11 @@ Actions:
             actions.append("ATTACH_ENERGY_TO_ACTIVE")
 
     for i, card in enumerate(player.hand):
-        if card.card_type == "Pokemon":
-            if len(player.bench) != 3:
+        if card.card_type == "pokemon":
+            if len(player.bench) != 3 and card.stage == "basic":
                 actions.append(f"PLAY_CARD_{i}")
+                if debug:
+                    print(f"Appended 'PLAY_CARD_{i}' to action list. Card name: {card.name}")
         
         elif card.card_type == "Trainer":
             if card.is_supporter:
@@ -97,26 +99,35 @@ Actions:
     elif action.startswith("PLAY_CARD_"):
         card_index = int(action.split("_")[-1])
         card = player.hand[card_index]
-        print(f"{card.name} gets played.")
+        print(f"{card.name} (Index: {card_index}) gets played.")
+
+        if card.card_type == "trainer":
      
-        if card.effect.effect_type == "heal":
-            nstate = apply_heal(nstate, card)
-        elif card.effect.effect_type == "draw":
-            nstate = apply_draw(nstate, card)
-        elif card.effect.effect_type == "attach_energy":
-            nstate = apply_attach_energy(nstate, card)
-        elif card.effect.effect_type == "damage_boost":
-            nstate = apply_damage_boost(nstate, card)
-        elif card.effect.effect_type == "watch_opponent_hand_cards":
-            nstate = apply_watch_opponent_hand_cards(nstate, card)
+            if card.effect.effect_type == "heal":
+                nstate = apply_heal(nstate, card)
+            elif card.effect.effect_type == "draw":
+                nstate = apply_draw(nstate, card)
+            elif card.effect.effect_type == "attach_energy":
+                nstate = apply_attach_energy(nstate, card)
+            elif card.effect.effect_type == "damage_boost":
+                nstate = apply_damage_boost(nstate, card)
+            elif card.effect.effect_type == "watch_opponent_hand_cards":
+                nstate = apply_watch_opponent_hand_cards(nstate, card)
         
-        if card.is_supporter:
-            nstate.supporter_played = True
+            if card.is_supporter:
+                nstate.supporter_played = True
+
+            print(f"Card {card_index} gets discarded from {player.hand}.")
+            player.discard.append(player.hand.pop(card_index))
+
+        elif card.card_type == "pokemon":
+    
+            if card.stage == "basic":
+                player.bench.append(player.hand.pop(card_index))
 
         player = nstate.player1 if current_player == 1 else nstate.player2       
 
-        player.discard.append(player.hand.pop(card_index))
-        print(f"Card {card_index} gets removed from {player.hand}.")
+
 
     return nstate
 

@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
+from copy import deepcopy
 
 @dataclass
 class PlayerState:
@@ -51,20 +52,34 @@ Attributes:
     winner: int | None
     supporter_played: bool = False
 
-def create_initial_state(player1_deck: list[card], player2_deck: list[Card], energy_type: str = "Fire") -> GameState:
+def create_initial_state(player1_deck: list[card], player2_deck: list[Card], energy_type: str = "Fire", debug: bool = False) -> GameState:
     
     """
 Helper function that sets up a game by initializing a default GameState.
+    
+1. sets up two PlayerStates with the respective decks
+2. puts a basic into opening hand
+3. draws the other four cards
     """
 
-    p1 = PlayerState(energy_type=energy_type, deck=player1_deck)
-    p2 = PlayerState(energy_type=energy_type, deck=player2_deck)
+    p1 = PlayerState(energy_type=energy_type, deck=deepcopy(player1_deck))
+    p2 = PlayerState(energy_type=energy_type, deck=deepcopy(player2_deck))
 
     for player in [p1, p2]:
-        for i in range(5):
-            player.hand.append(player.deck.pop())
-        for i, card in enumerate(player.hand):
+
+        for i, card in enumerate(player.deck):
             if card.card_type == "pokemon":
+                if card.stage == "basic":
+                    player.hand.append(player.deck.pop(i))
+                    if debug:
+                        print(f"Mandatory Basic: {card.name}")
+                    break
+
+        for i in range(4):
+            player.hand.append(player.deck.pop())
+
+        for i, card in enumerate(player.hand):
+            if card.card_type == "pokemon" and card.stage == "basic":
                 player.active = player.hand.pop(i)
                 break
 
