@@ -13,9 +13,10 @@ Returns a list of all possible actions (draw card, attach energy, attack, ...) f
 
 Actions:
     "END_TURN"                              - always possible.
-    "ATTACH_ENERGY_TO_ACTIVE"               - possible if energy zone still contains energy (i.e. no energy was attached yet).
-    "ATTACK_WITH_ACTIVE"                    - possible if active pokemon has fulfilled the energy requirement for its attack.
+    "ATTACH_ENERGY_TO_ACTIVE"               - possible if: energy zone still contains energy (i.e. no energy was attached yet).
+    "ATTACK_WITH_ACTIVE"                    - possible if: active pokemon has fulfilled the energy requirement for its attack.
     "PLAY_CARD_N" (for each card in hand)   - possible if: card is pokemon and bench is not full OR card is Item OR card is Supporter and no supporter was played yet.
+    "RETREAT"                               - possible if: active pokemon has enough energy, bench is non-empty (replacement exists)
     """
 
     current_player = state.current_player
@@ -29,6 +30,10 @@ Actions:
         
         if player.energy_available:
             actions.append("ATTACH_ENERGY_TO_ACTIVE")
+
+        if player.active.attached_energy >= player.active.retreat_cost:
+            for i, card in enumerate(player.bench):
+                actions.append("RETREAT_TO_SLOT_" + str(i))
 
     for i, card in enumerate(player.hand):
         if card.card_type == "pokemon":
@@ -57,6 +62,7 @@ Actions:
     "ATTACH_ENERGY_TO_ACTIVE"   - increments energy counter of active pokemon by 1. Empties the energy zone so attaching happens only once per turn.
     "ATTACK_WITH_ACTIVE"        - decrease opponent's HP by the amount of damage the attack inflicts. check for knockout. end turn (see END_TURN).
     "PLAY_CARD_N"               - Apply effect, move to discard pile.
+    "RETREAT_TO_SLOT_N"         - Delete Energy, move active to bench, move benched to active.
     """
     
     nstate = copy_state(state)
@@ -125,7 +131,12 @@ Actions:
 
         player = nstate.player1 if current_player == 1 else nstate.player2       
 
+    elif action.startswith("RETREAT_TO_SLOT_"):
+        slot_index = int(action.split("_")[-1])
 
+        temp = player.active
+        player.active = player.bench.pop(slot_index)
+        player.bench.insert(slot_index, temp)
 
     return nstate
 
@@ -140,22 +151,21 @@ Duplicate a GameState to modify it whilst not breaking search algorithms later.
 def start_turn(state: GameState) -> GameState:
     
     """
+Apply start-of-turn effects (mutates the state in place).
+
 1. Draw a card (empty deck -> nothing happens)
 2. Generate Energy in the Energy Zone
 3. Reset supporter_played flag
 4. Reset damage_boost
     """
 
-    nstate = deepcopy(state)
-    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
-
+    player = state.player1 if state.current_player == 1 else state.player2
+    
     if player.deck:
         player.hand.append(player.deck.pop())
     
     player.energy_available = True
-
-    nstate.supporter_played = False
-
+    state.supporter_played = False
     player.damage_boost = 0
-
-    return nstate
+    
+    return state

@@ -27,10 +27,11 @@ Pokemons can attack, take damage and get KO'd. Energy cards may get attached to 
 
 Attributes:
     hp: current health points. start at max, decrease when damaged.
-    damage: amount of hp enemy pokemon lose if they get attacked
+    damage: amount of hp enemy pokemon lose if they get attacked.
     stage: "basic", "stage1", "stage2" - shows where in the evolution line it is.
     attack_cost: the amount of energy that needs to be attached in order for the pokemon to be able to use its attack and do damage.
     ex pokemon give two points when KO'd.
+    retreat_cost: amount of energies that get discarded when switching this pokemon from the active spot to the bench.
     typing: "fire", "water", "grass", ... Important for calculating weakness later.
     attached_energy: amount of energy tokens (currency required to unleash attacks) are currently equipped. starts at 0 and increases as game progresses.
     """
@@ -39,6 +40,7 @@ Attributes:
     hp: int
     typing: str
     stage: str
+    retreat_cost: int
     attack_cost: int = 0
     is_ex: bool = False
     attached_energy: int = 0

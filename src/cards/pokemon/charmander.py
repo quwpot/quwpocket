@@ -7,7 +7,8 @@ CHARMANDER = Pokemon(
     stage="basic",
     max_hp=60,
     hp=60,
-    damage=20,
+    damage=30,
     attack_cost=1,
+    retreat_cost=1,
     is_ex=False
 )
