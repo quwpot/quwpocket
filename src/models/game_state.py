@@ -60,7 +60,10 @@ Helper function that sets up a game by initializing a default GameState.
 1. sets up two PlayerStates with the respective decks
 2. puts a basic into opening hand
 3. draws the other four cards
+4. starts the first turn
     """
+
+    from src.rules.actions import start_turn
 
     p1 = PlayerState(energy_type=energy_type, deck=deepcopy(player1_deck))
     p2 = PlayerState(energy_type=energy_type, deck=deepcopy(player2_deck))
@@ -83,12 +86,16 @@ Helper function that sets up a game by initializing a default GameState.
                 player.active = player.hand.pop(i)
                 break
 
-    return GameState(
-        player1=p1,
-        player2=p2,
-        turn=1,
-        current_player=1,
-        game_over=False,
-        winner=None,
-        supporter_played=False
+    gs = GameState(
+    player1=p1,
+    player2=p2,
+    turn=1,
+    current_player=1,
+    game_over=False,
+    winner=None,
+    supporter_played=False
     )
+
+    state = start_turn(gs)
+
+    return state

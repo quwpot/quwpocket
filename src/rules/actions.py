@@ -66,10 +66,9 @@ Actions:
     opponent = nstate.player1 if current_player == 2 else nstate.player2   
 
     if action == "END_TURN":
-        player.damage_boost = 0
         nstate.current_player = (current_player % 2) + 1
         nstate.turn += 1
-        nstate.supporter_played = False
+        nstate = start_turn(nstate)
 
     elif action == "ATTACH_ENERGY_TO_ACTIVE":
         player.active.attached_energy += 1
@@ -91,10 +90,9 @@ Actions:
                 nstate.game_over = True
                 nstate.winner = current_player
 
-        player.damage_boost = 0        
         nstate.current_player = (current_player % 2) + 1
         nstate.turn += 1
-        nstate.supporter_played = False
+        nstate = start_turn(nstate)
 
     elif action.startswith("PLAY_CARD_"):
         card_index = int(action.split("_")[-1])
@@ -138,3 +136,26 @@ Duplicate a GameState to modify it whilst not breaking search algorithms later.
     """
 
     return deepcopy(state)
+
+def start_turn(state: GameState) -> GameState:
+    
+    """
+1. Draw a card (empty deck -> nothing happens)
+2. Generate Energy in the Energy Zone
+3. Reset supporter_played flag
+4. Reset damage_boost
+    """
+
+    nstate = deepcopy(state)
+    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
+
+    if player.deck:
+        player.hand.append(player.deck.pop())
+    
+    player.energy_available = True
+
+    nstate.supporter_played = False
+
+    player.damage_boost = 0
+
+    return nstate
