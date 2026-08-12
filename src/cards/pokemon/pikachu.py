@@ -10,5 +10,6 @@ PIKACHU = Pokemon(
     damage=20,
     attack_cost=1,
     retreat_cost=1,
+    weakness="Fighting",
     is_ex=False
 )

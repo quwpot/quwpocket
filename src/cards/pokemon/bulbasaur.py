@@ -10,5 +10,6 @@ BULBASAUR = Pokemon(
     damage=40,
     attack_cost=2,
     retreat_cost=1,
+    weakness="Fire",
     is_ex=False
 )

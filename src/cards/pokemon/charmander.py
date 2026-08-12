@@ -10,5 +10,6 @@ CHARMANDER = Pokemon(
     damage=30,
     attack_cost=1,
     retreat_cost=1,
+    weakness="Water",
     is_ex=False
 )

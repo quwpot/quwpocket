@@ -10,5 +10,6 @@ SQUIRTLE = Pokemon(
     damage=20,
     attack_cost=1,
     retreat_cost=1,
+    weakness="Electric",
     is_ex=False
 )

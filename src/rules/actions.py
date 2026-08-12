@@ -12,11 +12,11 @@ Returns a list of all possible actions (draw card, attach energy, attack, ...) f
 3. Check which actions are possible.
 
 Actions:
-    "END_TURN"                              - always possible.
-    "ATTACH_ENERGY_TO_ACTIVE"               - possible if: energy zone still contains energy (i.e. no energy was attached yet).
-    "ATTACK_WITH_ACTIVE"                    - possible if: active pokemon has fulfilled the energy requirement for its attack.
-    "PLAY_CARD_N" (for each card in hand)   - possible if: card is pokemon and bench is not full OR card is Item OR card is Supporter and no supporter was played yet.
-    "RETREAT"                               - possible if: active pokemon has enough energy, bench is non-empty (replacement exists)
+    "END_TURN"                                      - always possible.
+    "ATTACH_ENERGY_TO_ACTIVE"                       - possible if: energy zone still contains energy (i.e. no energy was attached yet).
+    "ATTACK_WITH_ACTIVE"                            - possible if: active pokemon has fulfilled the energy requirement for its attack.
+    "PLAY_CARD_N" (for each card in hand)           - possible if: card is basic pokemon and bench is not full  OR card is evolutiom pokemon and preevolution exists OR card is Item OR card is Supporter and no supporter was played yet.
+    "RETREAT_TO_SLOT_N" (for each Pokemon on Bench  - possible if: active pokemon has enough energy, bench is non-empty (replacement exists)
     """
 
     current_player = state.current_player
@@ -41,6 +41,13 @@ Actions:
                 actions.append(f"PLAY_CARD_{i}")
                 if debug:
                     print(f"Appended 'PLAY_CARD_{i}' to action list. Card name: {card.name}")
+
+            elif card.evolves_from == player.active.name and player.active.turns_in_play >= 1:
+                actions.append(f"PLAY_CARD_ACTIVE_{i}")
+
+            for j, dude in enumerate(player.bench):
+                if card.evolves_from == dude.name and dude.turns_in_play >= 1:
+                    actions.append(f"PLAY_CARD_{j}_{i}")
         
         elif card.card_type == "Trainer":
             if card.is_supporter:
@@ -61,7 +68,7 @@ Actions:
     "END_TURN"                  - switches to the other player. increments turn count by 1. resets the supporter_played flag.
     "ATTACH_ENERGY_TO_ACTIVE"   - increments energy counter of active pokemon by 1. Empties the energy zone so attaching happens only once per turn.
     "ATTACK_WITH_ACTIVE"        - decrease opponent's HP by the amount of damage the attack inflicts. check for knockout. end turn (see END_TURN).
-    "PLAY_CARD_N"               - Apply effect, move to discard pile.
+    "PLAY_CARD_N"               - Trainer cards: apply effect, discard. Basic Pokemon: add to bench. Evolutions: evolve.
     "RETREAT_TO_SLOT_N"         - Delete Energy, move active to bench, move benched to active.
     """
     
@@ -82,6 +89,8 @@ Actions:
 
     elif action == "ATTACK_WITH_ACTIVE":
         opponent.active.hp -= (player.active.damage + player.damage_boost)
+        if opponent.active.weakness == player.active.typing:
+            opponent.active.hp -= 20
 
         if opponent.active.hp <= 0:
             if opponent.active.is_ex:
@@ -129,6 +138,21 @@ Actions:
             if card.stage == "basic":
                 player.bench.append(player.hand.pop(card_index))
 
+            else:
+                slot = action.split("_")[-2]
+    
+                if slot == "ACTIVE":
+                    temp = player.active
+                    player.active = player.hand.pop(card_index)
+                    player.active.hp = player.active.max_hp - (temp.max_hp - temp.hp)
+                    player.active.attached_energy = temp.attached_energy
+
+                else:
+                    temp = player.bench.pop(int(slot))
+                    player.bench.insert(int(slot), card)
+                    player.bench[int(slot)].hp = player.bench[int(slot)].max_hp - (temp.max_hp - temp.hp)
+                    player.bench[int(slot)].attached_energy = temp.attached_energy
+
         player = nstate.player1 if current_player == 1 else nstate.player2       
 
     elif action.startswith("RETREAT_TO_SLOT_"):
@@ -157,6 +181,7 @@ Apply start-of-turn effects (mutates the state in place).
 2. Generate Energy in the Energy Zone
 3. Reset supporter_played flag
 4. Reset damage_boost
+5. Increment each Pokemon's turns_in_play counter by 1.
     """
 
     player = state.player1 if state.current_player == 1 else state.player2
@@ -167,5 +192,8 @@ Apply start-of-turn effects (mutates the state in place).
     player.energy_available = True
     state.supporter_played = False
     player.damage_boost = 0
-    
+
+    player.active.turns_in_play += 1
+    for pokemon in player.bench:
+        pokemon.turns_in_play += 1
     return state
