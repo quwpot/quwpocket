@@ -1,6 +1,7 @@
 from copy import deepcopy
 from src.models.game_state import GameState
 from src.models.effects import *
+from src.rules.energy_utils import can_use_attack
 from random import choice
 
 def generate_actions(state: GameState, debug: bool = False) -> list[str]:
@@ -15,7 +16,7 @@ Returns a list of all possible actions (draw card, attach energy, attack, ...) f
 Actions:
     "END_TURN"                                      - always possible.
     "ATTACH_ENERGY_TO_SLOT_N"                       - possible if: energy zone still contains energy (i.e. no energy was attached yet).
-    "ATTACK_WITH_ACTIVE"                            - possible if: active pokemon has fulfilled the energy requirement for its attack.
+    "ATTACK_N"                                      - possible if: active pokemon has fulfilled the energy requirement for its attack.
     "PLAY_CARD_N" (for each card in hand)           - possible if: card is basic pokemon and bench is not full  OR card is evolutiom pokemon and preevolution exists OR card is Item OR card is Supporter and no supporter was played yet.
     "RETREAT_TO_SLOT_N" (for each Pokemon on Bench  - possible if: active pokemon has enough energy, bench is non-empty (replacement exists)
     """
@@ -25,16 +26,19 @@ Actions:
     
     actions = ["END_TURN"]
 
-    if player.active is not None:
-        if player.active.attached_energy >= player.active.attack_cost:        
-            actions.append("ATTACK_WITH_ACTIVE")
+    if player.active:
+        if debug:
+            print(f"Player has an active Pokemon")
+        for i, attack in enumerate(player.active.attacks):
+            if can_use_attack(player.active, attack):
+                actions.append(f"ATTACK_{i}")
         
         if player.energy_available:
             actions.append("ATTACH_ENERGY_TO_SLOT_ACTIVE")
 
-        if player.active.attached_energy >= player.active.retreat_cost:
+        if len(player.active.attached_energy) >= player.active.retreat_cost:
             for i, card in enumerate(player.bench):
-                actions.append("RETREAT_TO_SLOT_" + str(i))
+                actions.append(f"RETREAT_TO_SLOT_{i}")
 
     for i, card in enumerate(player.hand):
         if card.card_type == "pokemon":
@@ -71,7 +75,7 @@ Modifies a GameState depending on what action was selected.
 Actions:
     "END_TURN"                  - switches to the other player. increments turn count by 1. resets the supporter_played flag.
     "ATTACH_ENERGY_TO_SLOT_N"   - adds the current_energy_tpye to the list of attached energies of this Pokemon. Empties the energy zone so attaching happens only once per turn.
-    "ATTACK_WITH_ACTIVE"        - decrease opponent's HP by the amount of damage the attack inflicts. check for knockout. end turn (see END_TURN).
+    "ATTACK_N"                  - Chooses the attack at slot N and decreases opponent's HP by the amount of damage the attack inflicts. Apply additional effects (if any), check for knockout, end turn (see END_TURN).
     "PLAY_CARD_N"               - Trainer cards: apply effect, discard. Basic Pokemon: add to bench. Evolutions: evolve.
     "RETREAT_TO_SLOT_N"         - Delete Energy, move active to bench, move benched to active.
     """
@@ -99,10 +103,16 @@ Actions:
         player.current_energy_type = None
         player.energy_available = False
 
-    elif action == "ATTACK_WITH_ACTIVE":
-        opponent.active.hp -= (player.active.damage + player.damage_boost)
+    elif action.startswith("ATTACK_"):
+        index = int(action.split("_")[-1])
+        attack = player.active.attacks[index]
+
+        opponent.active.hp -= (attack.damage + player.damage_boost)
         if opponent.active.weakness == player.active.typing:
             opponent.active.hp -= 20
+
+        if attack.effect == "discard_energy":
+            nstate = apply_discard_energy(nstate, attack.effect)
 
         if opponent.active.hp <= 0:
             if opponent.active.is_ex:

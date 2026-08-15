@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field #dataclasses are classes for storing data (duh) and assist by automatically generating stuff like __init__ or __repr__
 from src.models.effect import Effect
+from src.models.attack import Attack
 
 @dataclass
 class Card:
@@ -38,17 +39,16 @@ Attributes:
     attached_energy: what types of energy tokens (currency required to unleash attacks) are currently equipped.
     """
     max_hp: int
-    damage: int
     hp: int
     typing: str
-    stage: str
+    stage: str = "Basic"
     retreat_cost: int = 1
     weakness: str | None =  None
     evolves_from: str | None = None
-    attack_cost: int = 0
     turns_in_play: int = 0
     is_ex: bool = False
     attached_energy: list[str] = field(default_factory=list)
+    attacks: list[Attack] = field(default_factory=list)
 
     def __repr__(self):
         return f"Pokemon('{self.name}{'(ex)' if self.is_ex else ''}': HP = {self.hp}, damage = {self.damage}, {'attached energy = ' + str(self.attached_energy) if self.attached_energy else 'no energy'}"

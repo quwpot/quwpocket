@@ -91,3 +91,19 @@ Reveals {amount} cards out of the opponents Hand.
         print(opponent.hand[i])
 
     return state
+
+def apply_discard_energy(state: GameState, effect: Effect) -> GameState:
+
+    """
+Discards {amount} energy from a specified Pokemon.
+    """
+
+    nstate = deepcopy(state)
+    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
+
+    if target == "active":
+        if target_condition == "typing":
+            for i in range(effect.amount):
+                player.active.attached_energy.remove(effect.target_condition_instance)
+
+    return nstate
