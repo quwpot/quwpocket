@@ -13,7 +13,7 @@ from src.cards.trainers.potion import POTION
 def test_first_player_no_energy():
     """Test that Player 1 gets no energy on first turn."""
     deck = [PIKACHU] * 20
-    game = create_initial_state(deck, deck, "Fire")
+    game = create_initial_state(deck, deck, "Fire", debug=True)
     
     print(f"Player 1 energy available: {game.player1.energy_available}")
     print(f"Game first_turn flag: {game.is_first_turn}")

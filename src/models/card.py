@@ -1,4 +1,4 @@
-from dataclasses import dataclass #dataclasses are classes for storing data (duh) and assist by automatically generating stuff like __init__ or __repr__
+from dataclasses import dataclass, field #dataclasses are classes for storing data (duh) and assist by automatically generating stuff like __init__ or __repr__
 from src.models.effect import Effect
 
 @dataclass
@@ -35,7 +35,7 @@ Attributes:
     retreat_cost: amount of energies that get discarded when switching this pokemon from the active spot to the bench.
     typing: "fire", "water", "grass", ... Important for calculating weakness later.
     turns_in_play: pokemon may only evolve if they've been in play for a full turn.
-    attached_energy: amount of energy tokens (currency required to unleash attacks) are currently equipped. starts at 0 and increases as game progresses.
+    attached_energy: what types of energy tokens (currency required to unleash attacks) are currently equipped.
     """
     max_hp: int
     damage: int
@@ -48,7 +48,7 @@ Attributes:
     attack_cost: int = 0
     turns_in_play: int = 0
     is_ex: bool = False
-    attached_energy: int = 0
+    attached_energy: list[str] = field(default_factory=list)
 
     def __repr__(self):
         return f"Pokemon('{self.name}{'(ex)' if self.is_ex else ''}': HP = {self.hp}, damage = {self.damage}, {'attached energy = ' + str(self.attached_energy) if self.attached_energy else 'no energy'}"

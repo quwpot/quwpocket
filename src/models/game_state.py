@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 from copy import deepcopy
-from random import randrange
+from random import randrange, choice
 
 @dataclass
 class PlayerState:
@@ -15,7 +15,9 @@ Attributes:
     hand: a list of all cards currently in hand.
     deck: a list of all remaining cards in deck (in draw order).
     points: the amount  of KO's the player has already taken. First to reach 3 points wins.
-    energy_type: what kinds of energy get generated in the energy zone
+    energy_type: what kinds of energy get generated in the energy zone. A maximum of three different types may be chosen.
+    current_energy_type: what type of energy can be attached out of the energy zone this turn.
+    next_energy_type: what type of energy will be generated in the energy zone next turn.
     energy_available: if the player can still attach an energy from the energy zone this turn. Energies do not carry over to future turns and can be attached to any pokemon of choice.
     """
 
@@ -25,7 +27,9 @@ Attributes:
     deck: list[Card] = field(default_factory = list)
     discard: list[Card] = field(default_factory = list)
     points: int = 0
-    energy_type: str = ""
+    energy_types: list[str] = field(default_factory = list)
+    next_energy_type: str = ""
+    current_energy_type: str = ""
     energy_available: bool = False
     damage_boost: Optional[int] = 0
 
@@ -54,7 +58,7 @@ Attributes:
     supporter_played: bool = False
     is_first_turn: bool = False
 
-def create_initial_state(player1_deck: list[card], player2_deck: list[Card], energy_type: str = "Fire", debug: bool = False) -> GameState:
+def create_initial_state(player1_deck: list[card], player2_deck: list[Card], energy_types: list[str] = ["Fire"], debug: bool = False) -> GameState:
     
     """
 Helper function that sets up a game by initializing a default GameState.
@@ -62,15 +66,16 @@ Helper function that sets up a game by initializing a default GameState.
 1. sets up two PlayerStates with the respective decks
 2. puts a basic into opening hand
 3. draws the other four cards
-4. Flips coin who goes first
-5. Sets is_first_turn flag (player going first gets no energy on turn 1)
-5. starts the first turn
+4. Initializes the first energy
+5. Flips coin who goes first
+6. Sets is_first_turn flag (player going first gets no energy on turn 1)
+7. starts the first turn
     """
 
     from src.rules.actions import start_turn
 
-    p1 = PlayerState(energy_type=energy_type, deck=deepcopy(player1_deck))
-    p2 = PlayerState(energy_type=energy_type, deck=deepcopy(player2_deck))
+    p1 = PlayerState(energy_types=deepcopy(energy_types), deck=deepcopy(player1_deck))
+    p2 = PlayerState(energy_types=deepcopy(energy_types), deck=deepcopy(player2_deck))
 
     for player in [p1, p2]:
 
@@ -90,6 +95,8 @@ Helper function that sets up a game by initializing a default GameState.
                 player.active = player.hand.pop(i)
                 break
 
+        player.next_energy_type = choice(player.energy_types)
+
     gs = GameState(
     player1=p1,
     player2=p2,
@@ -100,9 +107,9 @@ Helper function that sets up a game by initializing a default GameState.
     supporter_played=False
     )
 
-    gs.current_player = randrange(1, 2, 1)
+    gs.current_player = randrange(1, 3, 1)
     if debug:
-        print(f"Player {current_player} goes first.")
+        print(f"Player {gs.current_player} goes first.")
 
     gs.is_first_turn = True
     
