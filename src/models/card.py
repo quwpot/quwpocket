@@ -44,7 +44,7 @@ Attributes:
     typing: str
     stage: str = "basic"
     retreat_cost: int = 1
-    weakness: str | None =  None
+    weakness: str | None = None
     evolves_from: str | None = None
     turns_in_play: int = 0
     is_ex: bool = False
@@ -64,3 +64,16 @@ Trainer cards are non-Pokemon cards. Only one Supporter card may be played per t
     description: str
     effect: Effect
     is_supporter: bool = False
+
+@dataclass
+class Fossil(Card):
+
+    """
+Fossil cards are a mixture between Trainers and Pokemons. They are Trainer cards but can be put into play the same way Pokemons can. They can be discarded at any time if in play.
+    """
+
+    max_hp: int = 40
+    hp: int = 40
+    stage: str = "basic"
+    weakness: None = None
+    typing: str = "Colorless"

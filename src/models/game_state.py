@@ -25,7 +25,6 @@ Attributes:
     bench: list[Pokemon] = field(default_factory = list)
     hand: list[Card] = field(default_factory = list)
     deck: list[Card] = field(default_factory = list)
-    discard: list[Card] = field(default_factory = list)
     points: int = 0
     energy_types: list[str] = field(default_factory = list)
     next_energy_type: str = ""

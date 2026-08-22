@@ -17,8 +17,9 @@ Actions:
     "END_TURN"                                      - always possible.
     "ATTACH_ENERGY_TO_SLOT_N"                       - possible if: energy zone still contains energy (i.e. no energy was attached yet).
     "ATTACK_N"                                      - possible if: active pokemon has fulfilled the energy requirement for its attack.
-    "PLAY_CARD_N" (for each card in hand)           - possible if: card is basic pokemon and bench is not full  OR card is evolutiom pokemon and preevolution exists OR card is Item OR card is Supporter and no supporter was played yet.
-    "RETREAT_TO_SLOT_N" (for each Pokemon on Bench  - possible if: active pokemon has enough energy, bench is non-empty (replacement exists)
+    "PLAY_CARD_N" (for each card in hand)           - possible if: card is basic pokemon/fossil and bench is not full  OR card is evolutiom pokemon and preevolution exists OR card is Item OR card is Supporter and no supporter was played yet.
+    "RETREAT_TO_SLOT_N" (for each Pokemon on Bench) - possible if: active pokemon has enough energy, bench is non-empty (replacement exists)
+    "DISCARD_FOSSIL_N" (slot n)                     - possible if: fossil is in play.
     """
 
     current_player = state.current_player
@@ -27,21 +28,28 @@ Actions:
     actions = ["END_TURN"]
 
     if player.active:
+
         if debug:
             print(f"Player has an active Pokemon")
-        for i, attack in enumerate(player.active.attacks):
-            if can_use_attack(player.active, attack):
-                actions.append(f"ATTACK_{i}")
-        
-        if player.energy_available:
-            actions.append("ATTACH_ENERGY_TO_SLOT_ACTIVE")
 
-        if len(player.active.attached_energy) >= player.active.retreat_cost:
-            for i, card in enumerate(player.bench):
-                actions.append(f"RETREAT_TO_SLOT_{i}")
+        if player.active.card_type == "pokemon":
+
+            for i, attack in enumerate(player.active.attacks):
+                if can_use_attack(player.active, attack):
+                    actions.append(f"ATTACK_{i}")
+        
+            if player.energy_available:
+                actions.append("ATTACH_ENERGY_TO_SLOT_ACTIVE")
+
+            if len(player.active.attached_energy) >= player.active.retreat_cost:
+                for i, card in enumerate(player.bench):
+                    actions.append(f"RETREAT_TO_SLOT_{i}")
+
+        elif player.active.card_type == "fossil":
+            actions.append("DISCARD_FOSSIL_ACTIVE")
 
     for i, card in enumerate(player.hand):
-        if card.card_type == "pokemon":
+        if card.card_type in ["pokemon", "fossil"]:
             if len(player.bench) != 3 and card.stage == "basic":
                 actions.append(f"PLAY_CARD_{i}")
                 if debug:
@@ -54,7 +62,7 @@ Actions:
                 if card.evolves_from == dude.name and dude.turns_in_play >= 1:
                     actions.append(f"PLAY_CARD_{j}_{i}")
         
-        elif card.card_type == "Trainer":
+        elif card.card_type == "trainer":
             if card.is_supporter:
                 if not state.supporter_played:
                     actions.append(f"PLAY_CARD_{i}")
@@ -65,9 +73,12 @@ Actions:
     for i, card in enumerate(player.bench):
         actions.append("ATTACH_ENERGY_TO_SLOT_" + str(i))
 
+        if card.card_type == "fossil":
+            actions.append(f"DISCARD_FOSSIL_" + str(i))
+
     return actions
 
-def apply_action(state: GameState, action:str) -> GameState:
+def apply_action(state: GameState, action:str, debug: bool = False) -> GameState:
 
     """
 Modifies a GameState depending on what action was selected.
@@ -160,7 +171,7 @@ Actions:
             print(f"Card {card_index} gets discarded from {player.hand}.")
             player.discard.append(player.hand.pop(card_index))
 
-        elif card.card_type == "pokemon":
+        elif card.card_type in ["pokemon", "fossil"]:
     
             if card.stage == "basic":
                 player.bench.append(player.hand.pop(card_index))
@@ -188,6 +199,15 @@ Actions:
         temp = player.active
         player.active = player.bench.pop(slot_index)
         player.bench.insert(slot_index, temp)
+
+    elif action.startswith("DISCARD_FOSSIL_"):
+        slot = action.split("_")[-1]
+
+        if slot == "ACTIVE":
+            player.active = None
+        
+        else:
+            player.bench.pop(int(slot))
 
     else:
         raise Exception("Invalid Action")
