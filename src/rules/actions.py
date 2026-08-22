@@ -187,9 +187,10 @@ Actions:
             
             opponent.active = None
             
-            if player.points >= 3 or not opponent.bench:
+            if player.points >= 3 or (opponent.bench == []):
                 nstate.game_over = True
                 nstate.winner = current_player
+                return nstate
 
             else:
                 nstate.pending_promotion = True

@@ -4,7 +4,7 @@ from copy import deepcopy
 from random import randrange, choice
 
 @dataclass
-class PlayerState:
+class PlayerState():
 
     """
 PlayerState tracks all relevant information on one player's side of the board.

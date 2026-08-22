@@ -10,32 +10,41 @@ from src.rules.actions import generate_actions, apply_action
 
 def test_promotion_needed_after_knockout():
     """Test that promotion is required after knockout."""
-    # Setup: Attacker (Pikachu) vs Defender (Pichu with 10 HP)
     pikachu = Pokemon(
         name="Pikachu",
         card_type="pokemon",
         typing="Electric",
-        max_hp=60, hp=40,
-        attack_cost=1,
-        attached_energy=["Electric"]
+        max_hp=60, hp=60,
+        attacks=[]  # No attacks needed for this test
     )
     pichu = Pokemon(
         name="Pichu",
         card_type="pokemon",
         typing="Electric",
-        max_hp=30, hp=10,  # Low HP
-        attack_cost=1
+        max_hp=30, hp=10,
+        attacks=[]
     )
-    bench_pokemon = Pokemon(
+    raichu = Pokemon(
         name="Raichu",
         card_type="pokemon",
         typing="Electric",
-        max_hp=90, hp=50,
-        attack_cost=2
+        max_hp=90, hp=90,
+        attacks=[]
     )
     
+    # Manually set Pikachu to have an attack for testing
+    from src.models.attack import Attack, AttackRequirement
+    pikachu.attacks = [
+        Attack(
+            name="Thunder Shock",
+            damage=20,
+            cost=[AttackRequirement("Colorless", 1)]
+        )
+    ]
+    pikachu.attached_energy = ["Electric"]
+    
     p1 = PlayerState(active=pikachu)
-    p2 = PlayerState(active=pichu, bench=[bench_pokemon])
+    p2 = PlayerState(active=pichu, bench=[raichu])
     game = GameState(
         player1=p1, player2=p2,
         turn=2, current_player=1,
@@ -46,7 +55,7 @@ def test_promotion_needed_after_knockout():
         pending_player=0
     )
     
-    # Attack
+    # Attack - should knock out Pichu (10 HP, 20 damage)
     game = apply_action(game, "ATTACK_0")
     
     print(f"Pending promotion: {game.pending_promotion}")
@@ -60,16 +69,15 @@ def test_promotion_needed_after_knockout():
 
 def test_only_promotion_actions_available():
     """Test that only promotion actions are available when pending."""
-    bench_pokemon = Pokemon(
+    raichu = Pokemon(
         name="Raichu",
         card_type="pokemon",
         typing="Electric",
         max_hp=90, hp=90,
-        damage=40,
-        attack_cost=2
+        attacks=[]
     )
     
-    p2 = PlayerState(bench=[bench_pokemon])
+    p2 = PlayerState(bench=[raichu])
     game = GameState(
         player1=PlayerState(), player2=p2,
         turn=2, current_player=1,
@@ -93,16 +101,15 @@ def test_only_promotion_actions_available():
 
 def test_promotion_execution():
     """Test that promotion moves bench Pokemon to active."""
-    bench_pokemon = Pokemon(
+    raichu = Pokemon(
         name="Raichu",
         card_type="pokemon",
         typing="Electric",
         max_hp=90, hp=90,
-        damage=40,
-        attack_cost=2
+        attacks=[]
     )
     
-    p2 = PlayerState(bench=[bench_pokemon])
+    p2 = PlayerState(bench=[raichu])
     game = GameState(
         player1=PlayerState(), player2=p2,
         turn=2, current_player=1,
@@ -133,21 +140,28 @@ def test_loss_when_no_bench():
         card_type="pokemon",
         typing="Electric",
         max_hp=60, hp=60,
-        damage=20,
-        attack_cost=1,
-        attached_energy=["Electric"]
+        attacks=[]
     )
+    from src.models.attack import Attack, AttackRequirement
+    pikachu.attacks = [
+        Attack(
+            name="Thunder Shock",
+            damage=20,
+            cost=[AttackRequirement("Colorless", 1)]
+        )
+    ]
+    pikachu.attached_energy = ["Electric"]
+    
     pichu = Pokemon(
         name="Pichu",
         card_type="pokemon",
         typing="Electric",
         max_hp=30, hp=10,
-        damage=10,
-        attack_cost=1
+        attacks=[]
     )
     
-    p1 = PlayerState(active=pikachu)
-    p2 = PlayerState(active=pichu, bench=[])  # No bench!
+    p1 = PlayerState(active=pikachu, energy_types = ["Fire"])
+    p2 = PlayerState(active=pichu, bench=[], energy_types = ["Fire"])  # No bench!
     game = GameState(
         player1=p1, player2=p2,
         turn=2, current_player=1,
