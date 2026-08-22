@@ -50,7 +50,7 @@ Attributes:
     is_ex: bool = False
     attached_energy: list[str] = field(default_factory=list)
     attacks: list[Attack] = field(default_factory=list)
-    abiliy : Optional[Ability] = None
+    ability : Optional[Ability] = None
 
     def __repr__(self):
         return f"Pokemon('{self.name}{'(ex)' if self.is_ex else ''}': HP = {self.hp}, damage = {self.damage}, {'attached energy = ' + str(self.attached_energy) if self.attached_energy else 'no energy'}"

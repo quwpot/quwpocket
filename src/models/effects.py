@@ -16,17 +16,26 @@ Generic heal effect.
     nstate = deepcopy(state)
     player = nstate.player1 if nstate.current_player == 1 else nstate.player2
 
-    if target == "ACTIVE":
-        player.active.hp += effect.amount
+    if not effect.target == "all_own":
 
-        if player.active.hp > player.active.max_hp:
-            player.active.hp = player.active.max_hp
+        if target == "ACTIVE":
+            player.active.hp += effect.amount
+
+            if player.active.hp > player.active.max_hp:
+                player.active.hp = player.active.max_hp
+
+        else:
+            player.bench[int(target)].hp += effect.amount
+
+            if player.bench[int(target)].hp > player.bench[int(target)].max_hp:
+                player.bench[int(target)].hp = player.bench[int(target)].max_hp
 
     else:
-        player.bench[int(target)].hp += effect.amount
+        for card in [player.active] + player.bench:
+            card.hp += effect.amount
 
-        if player.bench[int(target)].hp > player.bench[int(target)].max_hp:
-            player.bench[int(target)].hp = player.bench[int(target)].max_hp
+            if card.hp > card.max_hp:
+                card.hp = card.max_hp
 
     return nstate
 
@@ -60,11 +69,11 @@ Generic energy attach effect.
     player = nstate.player1 if nstate.current_player == 1 else nstate.player2
 
     if target == "ACTIVE":
-        for i in range(card.effect.amount):
+        for i in range(effect.amount):
             player.active.attached_energy.append(effect.instance)
 
     else:
-        for i in range(card.effect.amount):
+        for i in range(effect.amount):
             player.bench[int(target)].attached_energy.append(effect.instance)
     
     return nstate
@@ -112,5 +121,29 @@ Discards {amount} energy from a specified Pokemon.
         if effect.target_condition == "typing":
             for i in range(effect.amount):
                 player.active.attached_energy.remove(effect.target_condition_instance)
+
+    return nstate
+
+def apply_deck_to_hand(state: GameState, effect: Effect) -> GameState:
+
+    """
+Puts {amount} specific cards from deck into players' hand.
+    """
+
+    nstate = deepcopy(state)
+    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
+
+    choices = []
+
+    if effect.target_condition == "typing":
+        for card in player.deck:
+            if card.typing:
+                if card.typing == effect.target_condition_instance:
+                    choices.append(card)
+
+    for i in range(effect.amount):
+        if not choices:
+            break
+        player.hand.append(choices.pop(randrange(len(choices) + 1)))
 
     return nstate

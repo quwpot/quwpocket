@@ -1,4 +1,5 @@
 from src.models.effect import Effect
+from src.models.game_state import GameState
 
 def get_effect_targets(state: GameState, effect: Effect) -> list[str]:
 
@@ -10,27 +11,24 @@ Check where an effect can be applied.
 
     targets = []
 
+    tdict = {
+    "active": [player.active],
+    "any": [player.active] + player.bench,
+    "all_own": [player.active] + player.bench
+    }
 
     if effect.target_condition == "typing":
 
-        if player.active and player.active.typing == effect.target_condition_instance:
-            targets.append("ACTIVE")
-
-        for i, pokemon in enumerate(player.bench):
-            if bench_pokemon.typing == effect.target_condition_instance:
-                targets.append(str(i))
-
-        return targets
+        for slot in tdict[effect.target]:
+            if slot.typing == effect.target_condition_instance:
+                targets.append(f"ACTIVE" if slot == player.active else str(player.bench.index(slot)))
     
-    if effect.target_condition == "healable":
+    elif effect.target_condition == "healable":
 
-        if player.active.hp < player.active.max_hp:
-            targets.append("ACTIVE")
-
-        for i, pokemon in enumerate(player.bench):
-            if pokemon.hp < pokemon.max_hp:
-                targets.append(str(i))
-
-        return targets
+        for slot in tdict[effect.target]:
+            if slot.hp < slot.max_hp:
+                targets.append(f"ACTIVE" if slot == player.active else str(player.bench.index(slot)))
     
     # Add more conditions as needed
+
+    return targets

@@ -1,8 +1,8 @@
 from copy import deepcopy
 from src.models.game_state import GameState
 from src.models.effects import *
-from src.rules.energy_utils import can_use_attack
-from src.utils.effect_utils import can_apply_effect
+from src.utils.energy_utils import can_use_attack
+from src.utils.effect_utils import get_effect_targets
 from random import choice
 
 def generate_actions(state: GameState, debug: bool = False) -> list[str]:
@@ -47,11 +47,15 @@ Actions:
                 for i, card in enumerate(player.bench):
                     actions.append(f"RETREAT_TO_SLOT_{i}")
 
-            if player.active.ability and player.active.ability.ability_type not in ["passive"] and player.active.ability.req_active:
-                if player.active.ability.ability_type == "once_per_turn" and not player.active.ability.used_this_turn:
-                    actions.append(f"USE_ABILITY_ACTIVE")
-                if player.active.ability.ability_type == "infinite":
-                    actions.append(f"USE_ABILITY_ACTIVE")
+            if player.active.ability and player.active.ability.ability_type not in ["passive"]:
+                if (player.active.ability.ability_type == "once_per_turn" and not player.active.ability.used_this_turn) or player.active.ability.ability_type == "infinite":
+                    targets = get_effect_targets(state, player.active.ability.effect)
+                    if targets:
+                        if player.active.ability.effect.target != "all_own":
+                            for target in targets:
+                                actions.append(f"USE_ABILITY_{target}_ACTIVE")
+                        else:
+                            actions.append(f"USE_ABILITY_ACTIVE")
 
         elif player.active.card_type == "fossil":
             actions.append("DISCARD_FOSSIL_ACTIVE")
@@ -97,10 +101,15 @@ Actions:
 
         if card.ability:
             if not card.ability.req_active:
-                if not card.ability.used_this_turn and card.ability.ability_type == "once_per_turn":
-                    actions.append(f"USE_ABILITY_{i}")
-                if card.ability.ability_type == "infinite":
-                    actions.append(f"USE_ABILITY_{i}")
+
+                if not card.ability.used_this_turn and card.ability.ability_type == "once_per_turn" or card.ability.ability_type == "infinite":
+                    targets = get_effect_targets(state, card.ability.effect)
+                    if targets:
+                        if card.ability.effect.target != "all_own":
+                            for target in targets:
+                                actions.append(f"USE_ABILITY_{target}_{i}")
+                        else:
+                            actions.append(f"USE_ABILITY_{i}")
 
     return actions
 
@@ -152,11 +161,14 @@ Actions:
 
         if attack.effect:
 
-            if attack.effect.type == "discard_energy":
+            if attack.effect.effect_type == "discard_energy":
                 nstate = apply_discard_energy(nstate, attack.effect)
 
-            elif attack.effect.type == "heal":
+            elif attack.effect.effect_type == "heal":
                 nstate = apply_heal(nstate, attack.effect)
+
+            elif attack.effect.effect_type == "deck_to_hand":
+                nstate = apply_deck_to_hand(nstate, attack.effect)
 
         if opponent.active.hp <= 0:
             if opponent.active.is_ex:
@@ -207,17 +219,17 @@ Actions:
 
             else:
     
-                if slot == "ACTIVE":
+                if target == "ACTIVE":
                     temp = player.active
                     player.active = player.hand.pop(card_index)
                     player.active.hp = player.active.max_hp - (temp.max_hp - temp.hp)
                     player.active.attached_energy = temp.attached_energy
 
                 else:
-                    temp = player.bench.pop(int(slot))
-                    player.bench.insert(int(slot), card)
-                    player.bench[int(slot)].hp = player.bench[int(slot)].max_hp - (temp.max_hp - temp.hp)
-                    player.bench[int(slot)].attached_energy = temp.attached_energy
+                    temp = player.bench.pop(int(target))
+                    player.bench.insert(int(target), card)
+                    player.bench[int(target)].hp = player.bench[int(target)].max_hp - (temp.max_hp - temp.hp)
+                    player.bench[int(target)].attached_energy = temp.attached_energy
 
         player = nstate.player1 if current_player == 1 else nstate.player2       
 
@@ -238,9 +250,19 @@ Actions:
             player.bench.pop(int(slot))
 
     elif action.startswith("USE_ABILITY_"):
-        slot = action.split("_")[-1]
+        parts = action.split("_")
+        slot = parts[-1]
+        target = parts[-2]
 
-        pass #will add later with specifics
+        if slot == "ACTIVE":
+            ability = player.active.ability
+        else:
+            ability = player.bench[int(slot)].ability
+
+        if ability.effect.effect_type == "heal":
+            nstate = apply_heal(nstate, ability.effect, target)
+
+        ability.used_this_turn = True
 
     else:
         raise Exception("Invalid Action")

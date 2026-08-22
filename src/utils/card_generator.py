@@ -79,10 +79,6 @@ Generate the complete Python file content for a Pokemon card.
         weakness = None
 
     evolves_from = input("Preevolution: ")
-    if evolves_from == "None":
-        evolves_from = None
-    else:
-        evolves_from
 
     is_ex = input("Card is ex? (y/n) ")
     if is_ex == "y":
@@ -105,7 +101,7 @@ Generate the complete Python file content for a Pokemon card.
     hp={max_hp},
     retreat_cost={retreat_cost},
     weakness="{weakness}",
-    evolves_from={None if evolves_from == None else "evolves_from"},
+    evolves_from={None if evolves_from == None else "{evolves_from}"},
     is_ex={is_ex},
     attacks={attacks_code}
 )"""

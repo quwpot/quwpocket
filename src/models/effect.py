@@ -10,3 +10,5 @@ class Effect:
     target: Optional[str] = None
     target_condition: Optional[str] = None
     target_condition_instance: Optional[str] = None
+    target_condition_2: Optional[str] = None
+    target_condition_instance_2: Optional[str] = None

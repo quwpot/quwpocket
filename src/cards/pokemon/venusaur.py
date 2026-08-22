@@ -22,7 +22,7 @@ VENUSAUR = Pokemon(
                 AttackRequirement("Colorless", 2)
             ],
             effect=Effect(
-                type="heal",
+                effect_type="heal",
                 amount=30,
                 target="active"
             )

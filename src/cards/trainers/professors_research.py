@@ -7,7 +7,7 @@ PROFESSORS_RESEARCH = Trainer(
     card_type="trainer",
     is_supporter=True,
     effect=Effect(
-        type="draw",
+        effect_type="draw",
         amount=2,
     ),
     description="Draw 2 cards."

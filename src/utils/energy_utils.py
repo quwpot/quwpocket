@@ -11,6 +11,6 @@ def can_use_attack(pokemon: Pokemon, attack: Attack) -> bool:
                 return False
 
         elif pokemon.attached_energy.count(req.energy_type) < req.amount:
-            print("wrong type")
+            print("energy amount doesnt suffice for attacking")
             return False
     return True
