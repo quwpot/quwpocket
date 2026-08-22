@@ -7,7 +7,7 @@ POTION = Trainer(
     card_type="trainer",
     is_supporter=False,
     effect=Effect(
-        effect_type="heal",
+        type="heal",
         amount=20,
         target="any"  # Can target active or bench
     ),

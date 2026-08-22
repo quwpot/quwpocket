@@ -111,8 +111,13 @@ Actions:
         if opponent.active.weakness == player.active.typing:
             opponent.active.hp -= 20
 
-        if attack.effect == "discard_energy":
-            nstate = apply_discard_energy(nstate, attack.effect)
+        if attack.effect:
+
+            if attack.effect.type == "discard_energy":
+                nstate = apply_discard_energy(nstate, attack.effect)
+
+            elif attack.effect.type == "heal":
+                nstate = apply_heal(nstate, attack.effect)
 
         if opponent.active.hp <= 0:
             if opponent.active.is_ex:

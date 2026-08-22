@@ -1,24 +1,24 @@
 from src.models.card import Pokemon
 from src.models.attack import Attack, AttackRequirement
 
-BULBASAUR = Pokemon(
-    name="Bulbasaur",
+IVYSAUR = Pokemon(
+    name="Ivysaur",
     card_type="pokemon",
     typing="Grass",
-    stage="basic",
-    max_hp=70,
-    hp=70,
-    retreat_cost=1,
+    stage="stage1",
+    max_hp=90,
+    hp=90,
+    retreat_cost=2,
     weakness="Fire",
-    evolves_from=None,
+    evolves_from="Bulbasaur",
     is_ex=False,
     attacks=[
         Attack(
-            name="Vine Whip",
-            damage=40,
+            name="Razor Leaf",
+            damage=60,
             cost=[
                 AttackRequirement("Grass", 1),
-                AttackRequirement("Colorless", 1)
+                AttackRequirement("Colorless", 2)
             ]
         )
     ]

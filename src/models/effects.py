@@ -4,7 +4,7 @@ from typing import Optional
 from src.models.game_state import GameState
 from src.models.card import Trainer
 
-def apply_heal(state: GameState, card: Trainer) -> GameState:
+def apply_heal(state: GameState, effect: Effect) -> GameState:
     
     """
 Generic heal effect.
@@ -16,13 +16,13 @@ Generic heal effect.
     nstate = deepcopy(state)
     player = nstate.player1 if nstate.current_player == 1 else nstate.player2
 
-    if card.effect.target in ["active", "any"]:
-        if card.effect.target_condition:
-            if card.effect.target_condition == "typing":
-                if card.effect.target_condition_instance == player.active.typing:
-                    player.active.hp += card.effect.amount
+    if effect.target in ["active", "any"]:
+        if effect.target_condition: #do conditions have to be met?
+            if effect.target_condition == "typing": #only heals pokemon of certain types
+                if effect.target_condition_instance == player.active.typing:
+                    player.active.hp += effect.amount
         else:
-            player.active.hp += card.effect.amount
+            player.active.hp += effect.amount
     if player.active.hp > player.active.max_hp:
         player.active.hp = player.active.max_hp
 

@@ -38,10 +38,11 @@ Attributes:
     turns_in_play: pokemon may only evolve if they've been in play for a full turn.
     attached_energy: what types of energy tokens (currency required to unleash attacks) are currently equipped.
     """
+
     max_hp: int
     hp: int
     typing: str
-    stage: str = "Basic"
+    stage: str = "basic"
     retreat_cost: int = 1
     weakness: str | None =  None
     evolves_from: str | None = None
