@@ -4,7 +4,7 @@ from typing import Optional
 from src.models.game_state import GameState
 from src.models.card import Trainer
 
-def apply_heal(state: GameState, effect: Effect) -> GameState:
+def apply_heal(state: GameState, effect: Effect, target: str) -> GameState:
     
     """
 Generic heal effect.
@@ -16,15 +16,17 @@ Generic heal effect.
     nstate = deepcopy(state)
     player = nstate.player1 if nstate.current_player == 1 else nstate.player2
 
-    if effect.target in ["active", "any"]:
-        if effect.target_condition: #do conditions have to be met?
-            if effect.target_condition == "typing": #only heals pokemon of certain types
-                if effect.target_condition_instance == player.active.typing:
-                    player.active.hp += effect.amount
-        else:
-            player.active.hp += effect.amount
-    if player.active.hp > player.active.max_hp:
-        player.active.hp = player.active.max_hp
+    if target == "ACTIVE":
+        player.active.hp += effect.amount
+
+        if player.active.hp > player.active.max_hp:
+            player.active.hp = player.active.max_hp
+
+    else:
+        player.bench[int(target)].hp += effect.amount
+
+        if player.bench[int(target)].hp > player.bench[int(target)].max_hp:
+            player.bench[int(target)].hp = player.bench[int(target)].max_hp
 
     return nstate
 
@@ -44,7 +46,7 @@ Generic draw effect.
 
     return nstate
 
-def apply_attach_energy(state: GameState, card: Trainer) -> GameState:
+def apply_attach_energy(state: GameState, effect: Effect, target: str) -> GameState:
     
     """
 Generic energy attach effect.
@@ -57,8 +59,13 @@ Generic energy attach effect.
     nstate = deepcopy(state)
     player = nstate.player1 if nstate.current_player == 1 else nstate.player2
 
-    if card.effect.target in ["active", "any"]:
-        player.active.attached_energy += card.effect.amount #no types for now
+    if target == "ACTIVE":
+        for i in range(card.effect.amount):
+            player.active.attached_energy.append(effect.instance)
+
+    else:
+        for i in range(card.effect.amount):
+            player.bench[int(target)].attached_energy.append(effect.instance)
     
     return nstate
 
@@ -92,7 +99,7 @@ Reveals {amount} cards out of the opponents Hand.
 
     return state
 
-def apply_discard_energy(state: GameState, effect: Effect) -> GameState:
+def apply_discard_energy(state: GameState, effect: Effect, target: str) -> GameState:
 
     """
 Discards {amount} energy from a specified Pokemon.
@@ -102,7 +109,7 @@ Discards {amount} energy from a specified Pokemon.
     player = nstate.player1 if nstate.current_player == 1 else nstate.player2
 
     if target == "active":
-        if target_condition == "typing":
+        if effect.target_condition == "typing":
             for i in range(effect.amount):
                 player.active.attached_energy.remove(effect.target_condition_instance)
 

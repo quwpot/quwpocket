@@ -2,6 +2,7 @@ from copy import deepcopy
 from src.models.game_state import GameState
 from src.models.effects import *
 from src.rules.energy_utils import can_use_attack
+from src.utils.effect_utils import can_apply_effect
 from random import choice
 
 def generate_actions(state: GameState, debug: bool = False) -> list[str]:
@@ -20,6 +21,7 @@ Actions:
     "PLAY_CARD_N" (for each card in hand)           - possible if: card is basic pokemon/fossil and bench is not full  OR card is evolutiom pokemon and preevolution exists OR card is Item OR card is Supporter and no supporter was played yet.
     "RETREAT_TO_SLOT_N" (for each Pokemon on Bench) - possible if: active pokemon has enough energy, bench is non-empty (replacement exists)
     "DISCARD_FOSSIL_N" (slot n)                     - possible if: fossil is in play.
+    "USE_ABILITY_N" (slot n)                        - possible if: card has ability and can use it (e.g. requirements: card needs to be in active, ability cann only be used once per turn, ...)
     """
 
     current_player = state.current_player
@@ -45,6 +47,12 @@ Actions:
                 for i, card in enumerate(player.bench):
                     actions.append(f"RETREAT_TO_SLOT_{i}")
 
+            if player.active.ability and player.active.ability.ability_type not in ["passive"] and player.active.ability.req_active:
+                if player.active.ability.ability_type == "once_per_turn" and not player.active.ability.used_this_turn:
+                    actions.append(f"USE_ABILITY_ACTIVE")
+                if player.active.ability.ability_type == "infinite":
+                    actions.append(f"USE_ABILITY_ACTIVE")
+
         elif player.active.card_type == "fossil":
             actions.append("DISCARD_FOSSIL_ACTIVE")
 
@@ -63,9 +71,20 @@ Actions:
                     actions.append(f"PLAY_CARD_{j}_{i}")
         
         elif card.card_type == "trainer":
+
             if card.is_supporter:
-                if not state.supporter_played:
-                    actions.append(f"PLAY_CARD_{i}")
+
+                if state.supporter_played:
+                    continue
+
+            if effect.target_condition:
+                targets = get_effect_targets(state, card.effect)
+
+                if not targets: #the effect can't be applied anywhere -> card can't be played
+                    continue
+
+                for target in targets:
+                    actions.append(f"PLAY_CARD_{target}_{i}")
 
             else:
                 actions.append(f"PLAY_CARD_{i}")
@@ -76,6 +95,13 @@ Actions:
         if card.card_type == "fossil":
             actions.append(f"DISCARD_FOSSIL_" + str(i))
 
+        if card.ability:
+            if not card.ability.req_active:
+                if not card.ability.used_this_turn and card.ability.ability_type == "once_per_turn":
+                    actions.append(f"USE_ABILITY_{i}")
+                if card.ability.ability_type == "infinite":
+                    actions.append(f"USE_ABILITY_{i}")
+
     return actions
 
 def apply_action(state: GameState, action:str, debug: bool = False) -> GameState:
@@ -84,11 +110,13 @@ def apply_action(state: GameState, action:str, debug: bool = False) -> GameState
 Modifies a GameState depending on what action was selected.
 
 Actions:
-    "END_TURN"                  - switches to the other player. increments turn count by 1. resets the supporter_played flag.
-    "ATTACH_ENERGY_TO_SLOT_N"   - adds the current_energy_tpye to the list of attached energies of this Pokemon. Empties the energy zone so attaching happens only once per turn.
+    "END_TURN"                  - Switches to the other player. increments turn count by 1. resets the supporter_played flag.
+    "ATTACH_ENERGY_TO_SLOT_N"   - Adds the current_energy_tpye to the list of attached energies of this Pokemon. Empties the energy zone so attaching happens only once per turn.
     "ATTACK_N"                  - Chooses the attack at slot N and decreases opponent's HP by the amount of damage the attack inflicts. Apply additional effects (if any), check for knockout, end turn (see END_TURN).
     "PLAY_CARD_N"               - Trainer cards: apply effect, discard. Basic Pokemon: add to bench. Evolutions: evolve.
     "RETREAT_TO_SLOT_N"         - Delete Energy, move active to bench, move benched to active.
+    "DISCARD_FOSSIL_N"          - Remove the fossil at the specified slot from play.
+    "USE_ABILITY_N"             - Applies the effect of the specified ability.
     """
     
     nstate = copy_state(state)
@@ -149,13 +177,14 @@ Actions:
 
     elif action.startswith("PLAY_CARD_"):
         card_index = int(action.split("_")[-1])
+        target = action.split("_")[-2]
         card = player.hand[card_index]
         print(f"{card.name} (Index: {card_index}) gets played.")
 
         if card.card_type == "trainer":
      
             if card.effect.effect_type == "heal":
-                nstate = apply_heal(nstate, card)
+                nstate = apply_heal(nstate, card.effect, target)
             elif card.effect.effect_type == "draw":
                 nstate = apply_draw(nstate, card)
             elif card.effect.effect_type == "attach_energy":
@@ -177,7 +206,6 @@ Actions:
                 player.bench.append(player.hand.pop(card_index))
 
             else:
-                slot = action.split("_")[-2]
     
                 if slot == "ACTIVE":
                     temp = player.active
@@ -209,6 +237,11 @@ Actions:
         else:
             player.bench.pop(int(slot))
 
+    elif action.startswith("USE_ABILITY_"):
+        slot = action.split("_")[-1]
+
+        pass #will add later with specifics
+
     else:
         raise Exception("Invalid Action")
 
@@ -231,8 +264,9 @@ Apply start-of-turn effects (mutates the state in place).
 2. Generate Energy in the Energy Zone based on next_energy_type
 3. Calculate which type of energy will be generated next turn
 4. Reset supporter_played flag
-5. Reset damage_boost
-6. Increment each Pokemon's turns_in_play counter by 1.
+5. Reset ability_used flag
+6. Reset damage_boost
+7. Increment each Pokemon's turns_in_play counter by 1.
     """
 
     player = state.player1 if state.current_player == 1 else state.player2
@@ -245,6 +279,13 @@ Apply start-of-turn effects (mutates the state in place).
     player.next_energy_type = choice(player.energy_types)
 
     state.supporter_played = False
+
+    if player.active.ability:
+        player.active.ability.used_this_turn = False
+    for pokemon in player.bench:
+        if pokemon.ability:
+            pokemon.ability.used_this_turn = False
+
     player.damage_boost = 0
 
     if player.active:    

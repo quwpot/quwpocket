@@ -9,7 +9,8 @@ POTION = Trainer(
     effect=Effect(
         type="heal",
         amount=20,
-        target="any"  # Can target active or bench
+        target="any",  # Can target active or bench
+        target_condition="healable"
     ),
     description="Heal 20 damage from 1 of your Pokémon."
 )
