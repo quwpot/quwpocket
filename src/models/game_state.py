@@ -56,6 +56,8 @@ Attributes:
     winner: int | None
     supporter_played: bool = False
     is_first_turn: bool = False
+    pending_promotion: bool = False  # True when promotion is required
+    pending_player: int = 0  # Which player needs to promote
 
 def create_initial_state(player1_deck: list[card], player2_deck: list[Card], energy_types: list[str] = ["Fire"], debug: bool = False) -> GameState:
     

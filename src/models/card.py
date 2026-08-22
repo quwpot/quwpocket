@@ -53,7 +53,7 @@ Attributes:
     ability : Optional[Ability] = None
 
     def __repr__(self):
-        return f"Pokemon('{self.name}{'(ex)' if self.is_ex else ''}': HP = {self.hp}, damage = {self.damage}, {'attached energy = ' + str(self.attached_energy) if self.attached_energy else 'no energy'}"
+        return f"Pokemon('{self.name}{'(ex)' if self.is_ex else ''}': HP = {self.hp}, damage = {self.max_hp - self.hp}, {'attached energy = ' + str(self.attached_energy) if self.attached_energy else 'no energy'}"
 
 @dataclass
 class Trainer(Card):

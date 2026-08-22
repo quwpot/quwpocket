@@ -15,6 +15,7 @@ Returns a list of all possible actions (draw card, attach energy, attack, ...) f
 3. Check which actions are possible.
 
 Actions:
+    "PROMOTE_FROM_BENCH_N"                          - after knockout
     "END_TURN"                                      - always possible.
     "ATTACH_ENERGY_TO_SLOT_N"                       - possible if: energy zone still contains energy (i.e. no energy was attached yet).
     "ATTACK_N"                                      - possible if: active pokemon has fulfilled the energy requirement for its attack.
@@ -28,6 +29,13 @@ Actions:
     player = state.player1 if current_player == 1 else state.player2    
     
     actions = ["END_TURN"]
+
+    if state.pending_promotion:
+        player = state.player1 if state.pending_player == 1 else state.player2
+        actions = []
+        for i in range(len(player.bench)):
+            actions.append(f"PROMOTE_FROM_BENCH_{i}")
+        return actions
 
     if player.active:
 
@@ -81,7 +89,7 @@ Actions:
                 if state.supporter_played:
                     continue
 
-            if effect.target_condition:
+            if card.effect.target_condition:
                 targets = get_effect_targets(state, card.effect)
 
                 if not targets: #the effect can't be applied anywhere -> card can't be played
@@ -126,6 +134,7 @@ Actions:
     "RETREAT_TO_SLOT_N"         - Delete Energy, move active to bench, move benched to active.
     "DISCARD_FOSSIL_N"          - Remove the fossil at the specified slot from play.
     "USE_ABILITY_N"             - Applies the effect of the specified ability.
+    "PROMOTE_FROM_BENCH_N"      - Moves new Pokemon into now free acrive slot.
     """
     
     nstate = copy_state(state)
@@ -176,12 +185,16 @@ Actions:
             else:
                 player.points += 1
             
-            opponent.discard.append(opponent.active)
             opponent.active = None
             
-            if player.points >= 3:
+            if player.points >= 3 or not opponent.bench:
                 nstate.game_over = True
                 nstate.winner = current_player
+
+            else:
+                nstate.pending_promotion = True
+                nstate.pending_player = 2 if current_player == 1 else 1  # Opponent needs to promote
+                return nstate
 
         nstate.current_player = (current_player % 2) + 1
         nstate.turn += 1
@@ -210,7 +223,7 @@ Actions:
                 nstate.supporter_played = True
 
             print(f"Card {card_index} gets discarded from {player.hand}.")
-            player.discard.append(player.hand.pop(card_index))
+            player.hand.pop(card_index)
 
         elif card.card_type in ["pokemon", "fossil"]:
     
@@ -263,6 +276,15 @@ Actions:
             nstate = apply_heal(nstate, ability.effect, target)
 
         ability.used_this_turn = True
+
+    elif action.startswith("PROMOTE_FROM_BENCH_"):
+        slot = int(action.split("_")[-1])
+        player = nstate.player1 if nstate.pending_player == 1 else nstate.player2
+    
+        # Move Pokemon from bench to active
+        player.active = player.bench.pop(slot)
+        nstate.pending_promotion = False
+        nstate.pending_player = 0
 
     else:
         raise Exception("Invalid Action")

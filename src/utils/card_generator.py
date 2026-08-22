@@ -101,7 +101,7 @@ Generate the complete Python file content for a Pokemon card.
     hp={max_hp},
     retreat_cost={retreat_cost},
     weakness="{weakness}",
-    evolves_from={None if evolves_from == None else "{evolves_from}"},
+    evolves_from={'None' if evolves_from == 'None' else f'\"{evolves_from}\"'},
     is_ex={is_ex},
     attacks={attacks_code}
 )"""
