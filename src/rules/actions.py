@@ -179,6 +179,9 @@ Actions:
             elif attack.effect.effect_type == "deck_to_hand":
                 nstate = apply_deck_to_hand(nstate, attack.effect)
 
+            elif attack.effect.effect_type == "attach_energy":
+                nstate = apply_attach_energy(nstate, attack.effect)
+
         if opponent.active.hp <= 0:
             if opponent.active.is_ex:
                 player.points += 2

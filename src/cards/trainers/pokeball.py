@@ -1,0 +1,14 @@
+from src.models.card import Trainer
+from src.models.effect import Effect
+
+PROFESSORS_RESEARCH = Trainer(
+    name="Pokeball",
+    card_type="trainer",
+    is_supporter=False,
+    effect=Effect(
+        effect_type="deck_to_hand",
+        amount=1,
+        target_condition="stage",
+        target_condition_instance="basic"
+    )
+)

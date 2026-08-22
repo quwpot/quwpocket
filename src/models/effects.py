@@ -141,6 +141,12 @@ Puts {amount} specific cards from deck into players' hand.
                 if card.typing == effect.target_condition_instance:
                     choices.append(card)
 
+    elif effect.target_condition == "stage":
+        for card in player.deck:
+            if card.stage:
+                if card.stage == effect.target_condition_instance:
+                    choices.append(card)
+
     for i in range(effect.amount):
         if not choices:
             break
