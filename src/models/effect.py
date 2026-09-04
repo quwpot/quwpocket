@@ -6,7 +6,7 @@ class Effect:
     """Base class for all card effects."""
     effect_type: str
     amount: Optional[int] = None
-    instance: Optional[str] = None #e.g specifying which type of energy to attach
+    instance: Optional[str | int] = None #e.g specifying which type of energy to attach
     target: Optional[str] = None
     target_condition: Optional[str] = None
     target_condition_instance: Optional[str] = None

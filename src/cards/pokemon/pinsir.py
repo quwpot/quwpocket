@@ -18,7 +18,12 @@ PINSIR = Pokemon(
             damage=0,
             cost=[
                 AttackRequirement("Grass", 2)
-            ]
+            ],
+            effect=Effect(
+                effect_type="coin_flip_bonus_damage",
+                amount=2,
+                instance=50
+            )
         )
     ]
 )

@@ -18,7 +18,12 @@ VENONAT = Pokemon(
             damage=20,
             cost=[
                 AttackRequirement("Grass", 1)
-            ]
+            ],
+            effect=Effect(
+                effect_type="special_condition",
+                instance="poison",
+                target="opponent"
+            )
         )
     ]
 )

@@ -19,7 +19,12 @@ VILEPLUME = Pokemon(
             cost=[
                 AttackRequirement("Grass", 2),
                 AttackRequirement("Colorless", 1)
-            ]
+            ],
+            effect=Effect(
+                effect_type="special_condition",
+                instance="sleep",
+                target="opponent"
+            )
         )
     ]
 )

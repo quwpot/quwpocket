@@ -18,7 +18,12 @@ SKIDDO = Pokemon(
             damage=40,
             cost=[
                 AttackRequirement("Colorless", 1)
-            ]
+            ],
+            effect=Effect(
+                effect_type="coin_flip_bonus_damage",
+                amount=1,
+                instance=-40
+            )
         )
     ]
 )

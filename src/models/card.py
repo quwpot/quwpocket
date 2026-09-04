@@ -37,6 +37,7 @@ Attributes:
     typing: "fire", "water", "grass", ... Important for calculating weakness later.
     turns_in_play: pokemon may only evolve if they've been in play for a full turn.
     attached_energy: what types of energy tokens (currency required to unleash attacks) are currently equipped.
+    special_conditions: a pokemon can have multiple status conditions that cause special effects.
     """
 
     max_hp: int
@@ -48,6 +49,7 @@ Attributes:
     evolves_from: str | None = None
     turns_in_play: int = 0
     is_ex: bool = False
+    special_conditions: int = 0 #bit1 = poison, bit2 = sleep
     attached_energy: list[str] = field(default_factory=list)
     attacks: list[Attack] = field(default_factory=list)
     ability : Optional[Ability] = None

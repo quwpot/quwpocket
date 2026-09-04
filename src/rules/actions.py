@@ -18,9 +18,9 @@ Actions:
     "PROMOTE_FROM_BENCH_N"                          - after knockout
     "END_TURN"                                      - always possible.
     "ATTACH_ENERGY_TO_SLOT_N"                       - possible if: energy zone still contains energy (i.e. no energy was attached yet).
-    "ATTACK_N"                                      - possible if: active pokemon has fulfilled the energy requirement for its attack.
+    "ATTACK_N"                                      - possible if: active pokemon has fulfilled the energy requirement for its attack AND is not asleep.
     "PLAY_CARD_N" (for each card in hand)           - possible if: card is basic pokemon/fossil and bench is not full  OR card is evolutiom pokemon and preevolution exists OR card is Item OR card is Supporter and no supporter was played yet.
-    "RETREAT_TO_SLOT_N" (for each Pokemon on Bench) - possible if: active pokemon has enough energy, bench is non-empty (replacement exists)
+    "RETREAT_TO_SLOT_N" (for each Pokemon on Bench) - possible if: active pokemon has enough energy, bench is non-empty (replacement exists) AND active pokemon is  not asleep.
     "DISCARD_FOSSIL_N" (slot n)                     - possible if: fossil is in play.
     "USE_ABILITY_N" (slot n)                        - possible if: card has ability and can use it (e.g. requirements: card needs to be in active, ability cann only be used once per turn, ...)
     """
@@ -44,16 +44,28 @@ Actions:
 
         if player.active.card_type == "pokemon":
 
-            for i, attack in enumerate(player.active.attacks):
-                if can_use_attack(player.active, attack):
-                    actions.append(f"ATTACK_{i}")
+            if not player.active.special_conditions & (1 << 1):
+
+                for i, attack in enumerate(player.active.attacks):
+                    if can_use_attack(player.active, attack):
+
+                        if attack.needs_target:
+
+                            targets = get_effect_targets(state, attack.effect)
+                            if targets:
+                                for target in targets:
+                                    actions.append(f"ATTACK_{target}_{i}")
+                            else:
+                                actions.append(f"ATTACK_{i}")
+
+                        else: actions.append(f"ATTACK_{i}")
+
+                if len(player.active.attached_energy) >= player.active.retreat_cost:
+                    for i, card in enumerate(player.bench):
+                        actions.append(f"RETREAT_TO_SLOT_{i}")
         
             if player.energy_available:
                 actions.append("ATTACH_ENERGY_TO_SLOT_ACTIVE")
-
-            if len(player.active.attached_energy) >= player.active.retreat_cost:
-                for i, card in enumerate(player.bench):
-                    actions.append(f"RETREAT_TO_SLOT_{i}")
 
             if player.active.ability and player.active.ability.ability_type not in ["passive"]:
                 if (player.active.ability.ability_type == "once_per_turn" and not player.active.ability.used_this_turn) or player.active.ability.ability_type == "infinite":
@@ -121,6 +133,26 @@ Actions:
 
     return actions
 
+EFFECT_HANDLERS = {
+    "discard_energy": apply_discard_energy,
+    "heal": apply_heal,
+    "deck_to_hand": apply_deck_to_hand,
+    "attach_energy": apply_attach_energy,
+    "coin_flip_bonus_damage": apply_coin_flip_bonus_damage,
+    "draw": apply_draw,
+    "damage_boost": apply_damage_boost,
+    "watch_opponent_hand_cards": apply_watch_opponent_hand_cards,
+    "discard_energy": apply_discard_energy,
+    "switch_opponent_active": apply_switch_opponent_active,
+    "special_condition": apply_special_condition
+}
+
+def apply_effect(state, effect):
+    handler = EFFECT_HANDLERS.get(effect.effect_type)
+    if handler is None:
+        raise ValueError(f"Unknown effect type: {effect.effect_type}")
+    return handler(state, effect)
+
 def apply_action(state: GameState, action:str, debug: bool = False) -> GameState:
 
     """
@@ -131,7 +163,7 @@ Actions:
     "ATTACH_ENERGY_TO_SLOT_N"   - Adds the current_energy_tpye to the list of attached energies of this Pokemon. Empties the energy zone so attaching happens only once per turn.
     "ATTACK_N"                  - Chooses the attack at slot N and decreases opponent's HP by the amount of damage the attack inflicts. Apply additional effects (if any), check for knockout, end turn (see END_TURN).
     "PLAY_CARD_N"               - Trainer cards: apply effect, discard. Basic Pokemon: add to bench. Evolutions: evolve.
-    "RETREAT_TO_SLOT_N"         - Delete Energy, move active to bench, move benched to active.
+    "RETREAT_TO_SLOT_N"         - Remove special conditions, delete Energy, move active to bench, move benched to active.
     "DISCARD_FOSSIL_N"          - Remove the fossil at the specified slot from play.
     "USE_ABILITY_N"             - Applies the effect of the specified ability.
     "PROMOTE_FROM_BENCH_N"      - Moves new Pokemon into now free acrive slot.
@@ -162,6 +194,7 @@ Actions:
 
     elif action.startswith("ATTACK_"):
         index = int(action.split("_")[-1])
+        target = action.split("_")[-2]
         attack = player.active.attacks[index]
 
         opponent.active.hp -= (attack.damage + player.damage_boost)
@@ -170,17 +203,10 @@ Actions:
 
         if attack.effect:
 
-            if attack.effect.effect_type == "discard_energy":
-                nstate = apply_discard_energy(nstate, attack.effect)
+            neffect = deepcopy(attack.effect)
+            neffect.target = target
 
-            elif attack.effect.effect_type == "heal":
-                nstate = apply_heal(nstate, attack.effect)
-
-            elif attack.effect.effect_type == "deck_to_hand":
-                nstate = apply_deck_to_hand(nstate, attack.effect)
-
-            elif attack.effect.effect_type == "attach_energy":
-                nstate = apply_attach_energy(nstate, attack.effect)
+            nstate = apply_effect(nstate, neffect)
 
         if opponent.active.hp <= 0:
             if opponent.active.is_ex:
@@ -212,16 +238,10 @@ Actions:
 
         if card.card_type == "trainer":
      
-            if card.effect.effect_type == "heal":
-                nstate = apply_heal(nstate, card.effect, target)
-            elif card.effect.effect_type == "draw":
-                nstate = apply_draw(nstate, card)
-            elif card.effect.effect_type == "attach_energy":
-                nstate = apply_attach_energy(nstate, card)
-            elif card.effect.effect_type == "damage_boost":
-                nstate = apply_damage_boost(nstate, card)
-            elif card.effect.effect_type == "watch_opponent_hand_cards":
-                nstate = apply_watch_opponent_hand_cards(nstate, card)
+            ncard = deepcopy(card)
+            ncard.effect.target = target
+
+            nstate = apply_effect(nstate, ncard.effect)
         
             if card.is_supporter:
                 nstate.supporter_played = True
@@ -253,6 +273,11 @@ Actions:
     elif action.startswith("RETREAT_TO_SLOT_"):
         slot_index = int(action.split("_")[-1])
 
+        player.active.special_conditions = 0
+
+        for i in range(player.active.retreat_cost):
+            player.active.attached_energy.pop() #what energy can theoretically be chosen by the player - will implement later
+
         temp = player.active
         player.active = player.bench.pop(slot_index)
         player.bench.insert(slot_index, temp)
@@ -276,8 +301,10 @@ Actions:
         else:
             ability = player.bench[int(slot)].ability
 
-        if ability.effect.effect_type == "heal":
-            nstate = apply_heal(nstate, ability.effect, target)
+        nability = deepcopy(ability)
+        nability.effect.target = target
+
+        nstate = apply_effect(nstate, nability.effect)
 
         ability.used_this_turn = True
 
@@ -303,7 +330,7 @@ Duplicate a GameState to modify it whilst not breaking search algorithms later.
 
     return deepcopy(state)
 
-def start_turn(state: GameState) -> GameState:
+def start_turn(state: GameState, debug=False) -> GameState:
     
     """
 Apply start-of-turn effects (mutates the state in place).
@@ -314,11 +341,12 @@ Apply start-of-turn effects (mutates the state in place).
 4. Reset supporter_played flag
 5. Reset ability_used flag
 6. Reset damage_boost
-7. Increment each Pokemon's turns_in_play counter by 1.
+7. Apply special conditions
+8. Increment each Pokemon's turns_in_play counter by 1.
     """
 
     player = state.player1 if state.current_player == 1 else state.player2
-    
+    opponent = state.player1 if state.current_player == 2 else state.player2
     if player.deck:
         player.hand.append(player.deck.pop())
     
@@ -335,6 +363,38 @@ Apply start-of-turn effects (mutates the state in place).
             pokemon.ability.used_this_turn = False
 
     player.damage_boost = 0
+
+    if player.active.special_conditions:
+
+        if player.active.special_conditions & (1 << 0): #poison
+            player.active.hp -= 10
+
+            if player.active.hp <= 0:
+                if player.active.is_ex:
+                    opponent.points += 2
+                else:
+                    opponent.points += 1
+            
+                player.active = None
+            
+                if opponent.points >= 3 or (player.bench == []):
+                    state.game_over = True
+                    state.winner = 2 if state.current_player == 1 else 1
+                    return state
+
+                else:
+                    state.pending_promotion = True
+                    state.pending_player = current_player
+                    return state
+
+        if player.active.special_conditions & (1 << 1): #sleep
+            if choice([True, False]):  # Heads = wake up
+                player.active.special_conditions -= 2
+                if debug:
+                    print(f"{player.active.name} woke up!")
+            else:
+                if debug:
+                    print(f"{player.active.name} is still asleep!")
 
     if player.active:    
         player.active.turns_in_play += 1

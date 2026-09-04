@@ -16,6 +16,7 @@ LILLIGANT = Pokemon(
         Attack(
             name="Leaf Supply",
             damage=50,
+            needs_target=True
             cost=[
                 AttackRequirement("Grass", 2)
             ],

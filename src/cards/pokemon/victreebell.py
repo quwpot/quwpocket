@@ -21,5 +21,13 @@ VICTREEBELL = Pokemon(
                 AttackRequirement("Colorless", 1)
             ]
         )
-    ]
+    ],
+    ability=Ability(
+        name="Fragrance Trap",
+        ability_type="once_per_turn",
+        req_active=True,
+        effect=Effect(
+            effect_type="switch_opponent_active"
+        )
+    )
 )

@@ -13,3 +13,4 @@ class Attack:
     cost: list[AttackRequirement]
     effect: Optional[str] = None #side effects like discarding energy
     description: str = ""
+    needs_target: bool = False
