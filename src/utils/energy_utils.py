@@ -5,7 +5,6 @@ def can_use_attack(pokemon: Pokemon, attack: Attack) -> bool:
             total_cost = 0
             for type in attack.cost:
                 total_cost += type.amount
-            print(total_cost, pokemon.attached_energy)
             if total_cost > len(pokemon.attached_energy):
                 print("not enough")
                 return False

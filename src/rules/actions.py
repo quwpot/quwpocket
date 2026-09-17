@@ -317,6 +317,10 @@ Actions:
         nstate.pending_promotion = False
         nstate.pending_player = 0
 
+        nstate.current_player = (current_player % 2) + 1
+        nstate.turn += 1
+        nstate = start_turn(nstate)
+
     else:
         raise Exception("Invalid Action")
 

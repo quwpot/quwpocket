@@ -48,8 +48,8 @@ Attributes:
     supporter_played: If a Supporter card was already played this turn. Only one supporter card may be played each turn.
     """
 
-    player1: PlayerState 
-    player2: PlayerState
+    player1: PlayerState(energy_types = ["Fire"]) 
+    player2: PlayerState(energy_types = ["Fire"]) 
     turn: int
     current_player: int
     game_over: bool

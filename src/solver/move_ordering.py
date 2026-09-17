@@ -1,4 +1,4 @@
-def order_moves(state: GameState, moves: list[str]) -> list[str]:
+def order_moves(moves: list[str]) -> list[str]:
 
     """
 Order moves by priority for better pruning:
