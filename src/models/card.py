@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field #dataclasses are classes for storing data (duh) and assist by automatically generating stuff like __init__ or __repr__
 from src.models.effect import Effect
 from src.models.attack import Attack
+from typing import Optional
 
 @dataclass
 class Card:
@@ -64,8 +65,8 @@ class Trainer(Card):
 Trainer cards are non-Pokemon cards. Only one Supporter card may be played per turn
     """
 
-    description: str
     effect: Effect
+    description: Optional[str] = None
     is_supporter: bool = False
 
 @dataclass

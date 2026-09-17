@@ -1,5 +1,7 @@
 from src.models.card import Pokemon
 from src.models.attack import Attack, AttackRequirement
+from src.models.ability import Ability
+from src.models.effect import Effect
 
 VICTREEBELL = Pokemon(
     name="Victreebell",

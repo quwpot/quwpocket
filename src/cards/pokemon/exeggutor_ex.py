@@ -1,7 +1,8 @@
 from src.models.card import Pokemon
 from src.models.attack import Attack, AttackRequirement
+from src.models.effect import Effect
 
-EXEGGUTOR EX = Pokemon(
+EXEGGUTOR_EX = Pokemon(
     name="Exeggutor ex",
     card_type="pokemon",
     typing="Grass",

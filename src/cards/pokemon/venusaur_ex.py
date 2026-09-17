@@ -1,7 +1,8 @@
 from src.models.card import Pokemon
 from src.models.attack import Attack, AttackRequirement
+from src.models.effect import Effect
 
-VENUSAUR EX = Pokemon(
+VENUSAUR_EX = Pokemon(
     name="Venusaur ex",
     card_type="pokemon",
     typing="Grass",
@@ -10,7 +11,7 @@ VENUSAUR EX = Pokemon(
     hp=190,
     retreat_cost=3,
     weakness="Fire",
-    evolves_from=evolves_from,
+    evolves_from="Ivysaur",
     is_ex=True,
     attacks=[
         Attack(
@@ -33,7 +34,7 @@ VENUSAUR EX = Pokemon(
                 AttackRequirement("Colorless", 2)
             ],
             effect=Effect(
-                type="heal",
+                effect_type="heal",
                 amount=30,
                 target="active"
             )

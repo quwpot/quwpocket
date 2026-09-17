@@ -15,6 +15,8 @@ def evaluate_from_perspective(state: GameState, player: int) -> int:
 
     pokemon_list = []
     if hero.active:
+        if hero.active.attacks:
+            score += (hero.active.attacks[-1].damage / 10) #better attacks on active = good
         pokemon_list.append(hero.active)
     pokemon_list.extend(hero.bench)
 
@@ -26,9 +28,6 @@ def evaluate_from_perspective(state: GameState, player: int) -> int:
     score += (5 * total_energy_hero)
     
     score += (2 * len(hero.hand)) #more cards in hand = good
-
-    if hero.active.attacks:
-        score += (hero.active.attacks[-1].damage / 10) #better attacks on active = good
 
     score -= (5 * total_low_hp) #pokemon with low hp = bad
 

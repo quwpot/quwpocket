@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+from src.models.effect import Effect
 
 @dataclass
 class AttackRequirement:
@@ -11,6 +12,6 @@ class Attack:
     name: str
     damage: int
     cost: list[AttackRequirement]
-    effect: Optional[str] = None #side effects like discarding energy
+    effect: Optional[Effect] = None #side effects like discarding energy
     description: str = ""
     needs_target: bool = False

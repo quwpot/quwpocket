@@ -1,5 +1,6 @@
 from src.models.card import Pokemon
 from src.models.attack import Attack, AttackRequirement
+from src.models.effect import Effect
 
 LILLIGANT = Pokemon(
     name="Lilligant",
@@ -16,7 +17,7 @@ LILLIGANT = Pokemon(
         Attack(
             name="Leaf Supply",
             damage=50,
-            needs_target=True
+            needs_target=True,
             cost=[
                 AttackRequirement("Grass", 2)
             ],

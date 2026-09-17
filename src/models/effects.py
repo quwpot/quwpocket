@@ -40,7 +40,7 @@ Generic heal effect.
 
     return nstate
 
-def apply_draw(state: GameState, card: Trainer) -> GameState:
+def apply_draw(state: GameState, effect: Effect) -> GameState:
     
     """
 Generic draw effect.
@@ -51,7 +51,9 @@ Generic draw effect.
     nstate = deepcopy(state)
     player = nstate.player1 if nstate.current_player == 1 else nstate.player2
 
-    for i in range(card.effect.amount):
+    for i in range(effect.amount):
+        if not player.deck:      
+            break
         player.hand.append(player.deck.pop())
 
     return nstate
@@ -79,7 +81,7 @@ Generic energy attach effect.
     
     return nstate
 
-def apply_damage_boost(state: GameState, card: Trainer) -> GameState:
+def apply_damage_boost(state: GameState, effect: Effect) -> GameState:
 
     """
 Generic Damage Boost effect.
@@ -89,12 +91,10 @@ Generic Damage Boost effect.
 
     nstate = deepcopy(state)
     player = nstate.player1 if nstate.current_player == 1 else nstate.player2
-
-    player.damage_boost += card.effect.amount
-
+    player.damage_boost += effect.amount
     return nstate
 
-def apply_watch_opponent_hand_cards(state: GameState, card: Trainer) -> GameState:
+def apply_watch_opponent_hand_cards(state: GameState, effect: Effect) -> GameState:
 
     """
 Reveals {amount} cards out of the opponents Hand.
@@ -103,13 +103,11 @@ Reveals {amount} cards out of the opponents Hand.
     #just watching, not modifying anything so no need for deepcopy()
 
     opponent = state.player1 if state.current_player == 2 else state.player2
-
-    for i in range(min(card.effect.amount, len(opponent.hand))):
+    for i in range(min(effect.amount, len(opponent.hand))):
         print(opponent.hand[i])
-
     return state
 
-def apply_discard_energy(state: GameState, effect: Effect, target: str) -> GameState:
+def apply_discard_energy(state: GameState, effect: Effect) -> GameState:
 
     """
 Discards {amount} energy from a specified Pokemon.
@@ -118,11 +116,14 @@ Discards {amount} energy from a specified Pokemon.
     nstate = deepcopy(state)
     player = nstate.player1 if nstate.current_player == 1 else nstate.player2
 
+    target = effect.target
     if target == "active":
         if effect.target_condition == "typing":
             for i in range(effect.amount):
-                player.active.attached_energy.remove(effect.target_condition_instance)
-
+                try:
+                    player.active.attached_energy.remove(effect.target_condition_instance)
+                except ValueError:
+                    break
     return nstate
 
 def apply_deck_to_hand(state: GameState, effect: Effect) -> GameState:
@@ -155,7 +156,7 @@ Puts {amount} specific cards from deck into players' hand.
 
     return nstate
 
-def apply_coin_flip_bonus_damage(state: GameState, effect: Effect) -> GameState:
+def apply_coin_flip_bonus_damage(state: GameState, effect: Effect, debug: bool = False) -> GameState:
 
     """
 Amplifies the damage of an attack based on the amount of heads in {amount} coin flips.
@@ -170,7 +171,7 @@ Amplifies the damage of an attack based on the amount of heads in {amount} coin 
         if choice([True, False]):
             heads += 1
 
-    print(f"{heads} heads out of {effect.amount} flips")
+    if debug: print(f"{heads} heads out of {effect.amount} flips")
 
     opponent.active.hp -= (heads * effect.instance)
 

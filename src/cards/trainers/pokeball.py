@@ -1,7 +1,7 @@
 from src.models.card import Trainer
 from src.models.effect import Effect
 
-PROFESSORS_RESEARCH = Trainer(
+POKEBALL = Trainer(
     name="Pokeball",
     card_type="trainer",
     is_supporter=False,

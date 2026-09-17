@@ -1,4 +1,4 @@
-def can_use_attack(pokemon: Pokemon, attack: Attack) -> bool:
+def can_use_attack(pokemon: Pokemon, attack: Attack, debug: bool = False) -> bool:
     for req in attack.cost:
 
         if req.energy_type == "Colorless":
@@ -10,6 +10,6 @@ def can_use_attack(pokemon: Pokemon, attack: Attack) -> bool:
                 return False
 
         elif pokemon.attached_energy.count(req.energy_type) < req.amount:
-            print("energy amount doesnt suffice for attacking")
+            if debug: print("energy amount doesnt suffice for attacking")
             return False
     return True

@@ -114,7 +114,8 @@ Actions:
                 actions.append(f"PLAY_CARD_{i}")
 
     for i, card in enumerate(player.bench):
-        actions.append("ATTACH_ENERGY_TO_SLOT_" + str(i))
+        if player.energy_available:
+            actions.append("ATTACH_ENERGY_TO_SLOT_" + str(i))
 
         if card.card_type == "fossil":
             actions.append(f"DISCARD_FOSSIL_" + str(i))
@@ -207,6 +208,8 @@ Actions:
             neffect.target = target
 
             nstate = apply_effect(nstate, neffect)
+            player = nstate.player1 if current_player == 1 else nstate.player2
+            opponent = nstate.player1 if current_player == 2 else nstate.player2
 
         if opponent.active.hp <= 0:
             if opponent.active.is_ex:
@@ -234,7 +237,7 @@ Actions:
         card_index = int(action.split("_")[-1])
         target = action.split("_")[-2]
         card = player.hand[card_index]
-        print(f"{card.name} (Index: {card_index}) gets played.")
+        if debug: print(f"{card.name} (Index: {card_index}) gets played.")
 
         if card.card_type == "trainer":
      
@@ -242,11 +245,13 @@ Actions:
             ncard.effect.target = target
 
             nstate = apply_effect(nstate, ncard.effect)
+            player = nstate.player1 if current_player == 1 else nstate.player2
+            opponent = nstate.player1 if current_player == 2 else nstate.player2
         
             if card.is_supporter:
                 nstate.supporter_played = True
 
-            print(f"Card {card_index} gets discarded from {player.hand}.")
+            if debug: print(f"Card {card_index} gets discarded from {[card.name for card in player.hand]}.")
             player.hand.pop(card_index)
 
         elif card.card_type in ["pokemon", "fossil"]:
@@ -264,6 +269,7 @@ Actions:
 
                 else:
                     temp = player.bench.pop(int(target))
+                    card = player.hand.pop(card_index)
                     player.bench.insert(int(target), card)
                     player.bench[int(target)].hp = player.bench[int(target)].max_hp - (temp.max_hp - temp.hp)
                     player.bench[int(target)].attached_energy = temp.attached_energy
@@ -305,8 +311,14 @@ Actions:
         nability.effect.target = target
 
         nstate = apply_effect(nstate, nability.effect)
+        player = nstate.player1 if current_player == 1 else nstate.player2
+        opponent = nstate.player1 if current_player == 2 else nstate.player2
 
-        ability.used_this_turn = True
+        # Set used_this_turn on the NEW state's ability
+        if slot == "ACTIVE":
+            player.active.ability.used_this_turn = True
+        else:
+            player.bench[int(slot)].ability.used_this_turn = True
 
     elif action.startswith("PROMOTE_FROM_BENCH_"):
         slot = int(action.split("_")[-1])

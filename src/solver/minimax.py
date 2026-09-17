@@ -3,8 +3,14 @@ from src.rules.actions import apply_action, generate_actions
 from src.solver.evaluator import evaluate_from_perspective
 from src.solver.move_ordering import order_moves
 
-def search(state: GameState, depth: int, alpha=float('-inf'), beta=float('inf'), player=None, is_maximizing: bool = True):
+_node_count = 0
 
+def search(state: GameState, depth: int, alpha=float('-inf'), beta=float('inf'), player=None, is_maximizing: bool = True, debug: bool = False):
+
+    global _node_count
+
+    _node_count += 1
+    
     if player == None: player = state.current_player
 
     if depth == 0 or state.game_over:
@@ -24,7 +30,7 @@ def search(state: GameState, depth: int, alpha=float('-inf'), beta=float('inf'),
             else:
                 score,_ = search(nstate, depth, alpha, beta, player, True)
 
-            print(f"[depth={depth}] Score for {action} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
+            if debug: print(f"[depth={depth}] Score for {action} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
 
             if score > best_score:
                 best_score = score
@@ -48,7 +54,7 @@ def search(state: GameState, depth: int, alpha=float('-inf'), beta=float('inf'),
             else:
                 score,_ = search(nstate, depth, alpha, beta, player, False)
 
-            print(f"[depth={depth}] Score for {action} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
+            if debug: print(f"[depth={depth}] Score for {action} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
 
             if score < best_score:
                 best_score = score
@@ -56,3 +62,14 @@ def search(state: GameState, depth: int, alpha=float('-inf'), beta=float('inf'),
                 if beta <= alpha: break
 
         return best_score, best_first_move
+
+def find_best_move(state, depth):
+    score, action = search(state, depth, player=state.current_player)
+    return action
+
+def get_node_count():
+    return _node_count
+
+def reset_node_count():
+    global _node_count
+    _node_count = 0
