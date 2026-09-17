@@ -1,9 +1,9 @@
 from src.models.game_state import GameState
-from src.rules.actions import apply_action
+from src.rules.actions import apply_action, generate_actions
 from src.solver.evaluator import evaluate_from_perspective
-from src.solver.search import get_turn_sequences
+from src.solver.move_ordering import order_moves
 
-def minimax_turn(state: GameState, depth: int, player=None, is_maximizing: bool = True):
+def search(state: GameState, depth: int, alpha=float('-inf'), beta=float('inf'), player=None, is_maximizing: bool = True):
 
     if player == None: player = state.current_player
 
@@ -14,18 +14,23 @@ def minimax_turn(state: GameState, depth: int, player=None, is_maximizing: bool 
         best_score = float('-inf')
         best_first_move = []
 
-        for sequence in get_turn_sequences(state):
-            nstate = state
-            for action in sequence:
-                nstate = apply_action(nstate, action)
-            # all sequences applied -> opponent's turn
-            score,_ = minimax_turn(nstate, depth-1, player, False)
+        for action in order_moves(generate_actions(state)):
+            nstate = apply_action(state, action)
 
-            print(f"[depth={depth}] Score for {sequence} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
+            turn_ended = (nstate.current_player != state.current_player)
+
+            if turn_ended:
+                score,_ = search(nstate, depth-1, alpha, beta, player, False)
+            else:
+                score,_ = search(nstate, depth, alpha, beta, player, True)
+
+            print(f"[depth={depth}] Score for {action} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
 
             if score > best_score:
                 best_score = score
-                best_first_move = sequence[0]
+                alpha = score
+                best_first_move = action
+                if alpha >= beta: break
 
         return best_score, best_first_move
 
@@ -33,17 +38,21 @@ def minimax_turn(state: GameState, depth: int, player=None, is_maximizing: bool 
         best_score = float('inf')
         best_first_move = []
 
-        for sequence in get_turn_sequences(state):
-            nstate = state
-            for action in sequence:
-                nstate = apply_action(nstate, action)
+        for action in order_moves(generate_actions(state)):
+            nstate = apply_action(state, action)
 
-            score, _ = minimax_turn(nstate, depth - 1, player, True)
+            turn_ended = (nstate.current_player != state.current_player)
 
-            print(f"[depth={depth}] Score for {sequence} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
+            if turn_ended:
+                score,_ = search(nstate, depth-1, alpha, beta, player, True)
+            else:
+                score,_ = search(nstate, depth, alpha, beta, player, False)
+
+            print(f"[depth={depth}] Score for {action} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
 
             if score < best_score:
                 best_score = score
-                best_first_move = sequence[0]
+                beta = score
+                if beta <= alpha: break
 
         return best_score, best_first_move
