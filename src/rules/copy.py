@@ -2,6 +2,7 @@ from src.models.card import Pokemon, Trainer
 from src.models.game_state import PlayerState, GameState
 from src.models.effect import Effect
 from copy import copy
+from random import Random
 
 
 def copy_pokemon(pk) -> Pokemon | None:
@@ -65,12 +66,14 @@ def copy_state(state) -> GameState:
     game_over=state.game_over,
     winner=state.winner,
     seed=state.seed,
-    rng=copy(state.rng),
+    rng=Random(),
     supporter_played=state.supporter_played,
     is_first_turn=state.is_first_turn,
     pending_promotion=state.pending_promotion,
     pending_player=state.pending_player
     )
+
+    n_state.rng.setstate(state.rng.getstate())
 
     return n_state
 

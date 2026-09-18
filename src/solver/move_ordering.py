@@ -1,4 +1,4 @@
-def order_moves(moves: list[str]) -> list[str]:
+def order_moves(moves: list[str], first_move: str | None) -> list[str]:
 
     """
 Order moves by priority for better pruning:
@@ -18,7 +18,7 @@ Ending Turn is a last resort.
     others = []
     end_turn = []
     
-    for move in moves:
+    for move != first_move in moves:
         if move.startswith("ATTACK_"):
             attacks.append(move)
         elif move.startswith("PLAY_CARD_"):
@@ -33,4 +33,4 @@ Ending Turn is a last resort.
             others.append(move)
     
     # Return in priority order
-    return attacks + plays + attaches + retreats + others + end_turn
+    return ([first_move] if first_move) + attacks + plays + attaches + retreats + others + end_turn
