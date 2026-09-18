@@ -10,8 +10,10 @@ ERIKA = Trainer(
         effect_type="heal",
         amount=50,
         target="any",
-        target_condition="typing",
-        target_condition_instance = "Grass"
+        target_conditions=[
+            {"type": "typing", "value": "Grass"},
+            {"type": "healable"},
+        ],
     ),
     description="Heal 50 damage from 1 of your Grass-Type Pokémon."
 )

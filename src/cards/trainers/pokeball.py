@@ -8,7 +8,8 @@ POKEBALL = Trainer(
     effect=Effect(
         effect_type="deck_to_hand",
         amount=1,
-        target_condition="stage",
-        target_condition_instance="basic"
+        target_conditions=[
+            {"type": "stage", "value": "basic"},
+        ],
     )
 )

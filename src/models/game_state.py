@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 from copy import deepcopy
-from random import randrange, choice
+from random import randrange, choice, Random
 
 @dataclass
 class PlayerState():
@@ -44,6 +44,8 @@ Attributes:
     turn: how many turns have passed since the beginning of the game.
     current_player: Whose turn it is. Only the active player may take actions.
     game_over: True if someone has reached 3 points through knockouts.
+    seed: starting value for the RNG to get reproducible and deterministic games.
+    rng: current instance of the rng
     winner: The player that triggered the end of the game (i.e. the one that reached 3 points)
     supporter_played: If a Supporter card was already played this turn. Only one supporter card may be played each turn.
     """
@@ -54,12 +56,14 @@ Attributes:
     current_player: int
     game_over: bool
     winner: int | None
+    seed: int
+    rng: int = field(default_factory=Random)
     supporter_played: bool = False
     is_first_turn: bool = False
     pending_promotion: bool = False  # True when promotion is required
     pending_player: int = 0  # Which player needs to promote
 
-def create_initial_state(player1_deck: list[card], player2_deck: list[Card], energy_types: list[str] = ["Fire"], debug: bool = False) -> GameState:
+def create_initial_state(player1_deck: list[card], player2_deck: list[Card], energy_types: list[str] = ["Fire"], seed: int = 42, debug: bool = False) -> GameState:
     
     """
 Helper function that sets up a game by initializing a default GameState.
@@ -96,8 +100,6 @@ Helper function that sets up a game by initializing a default GameState.
                 player.active = player.hand.pop(i)
                 break
 
-        player.next_energy_type = choice(player.energy_types)
-
     gs = GameState(
     player1=p1,
     player2=p2,
@@ -105,10 +107,14 @@ Helper function that sets up a game by initializing a default GameState.
     current_player=1,
     game_over=False,
     winner=None,
+    seed=seed,
+    rng=Random(seed),
     supporter_played=False
     )
 
-    gs.current_player = randrange(1, 3, 1)
+    player.next_energy_type = gs.rng.choice(player.energy_types)
+
+    gs.current_player = gs.rng.randrange(1, 3, 1)
     if debug:
         print(f"Player {gs.current_player} goes first.")
 

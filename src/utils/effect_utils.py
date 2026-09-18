@@ -1,6 +1,17 @@
 from src.models.effect import Effect
 from src.models.game_state import GameState
 
+def _matches(pokemon, condition: dict) -> bool:
+    ctype = condition["type"]
+    if ctype == "typing":
+        return pokemon.typing == condition["value"]
+    if ctype == "healable":
+        return pokemon.hp < pokemon.max_hp
+    if ctype == "stage":
+        return pokemon.stage == condition["value"]
+    raise ValueError(f"Unknown condition type: {ctype}")
+
+
 def get_effect_targets(state: GameState, effect: Effect) -> list[str]:
 
     """
@@ -10,32 +21,21 @@ Check where an effect can be applied.
     player = state.player1 if state.current_player == 1 else state.player2
     opponent = state.player2 if state.current_player == 1 else state.player1
 
-    targets = []
-
     tdict = {
-    "active": [player.active],
-    "bench": player.bench,
-    "any": [player.active] + player.bench,
-    "all_own": [player.active] + player.bench,
-    "opp_bench": opponent.bench
+        "active": [player.active] if player.active else [],
+        "bench": player.bench,
+        "any": ([player.active] if player.active else []) + player.bench,
+        "all_own": ([player.active] if player.active else []) + player.bench,
+        "opp_bench": opponent.bench,
     }
 
-    if effect.target_condition:
+    slots = tdict[effect.target]
+    targets = []
 
-        if effect.target_condition == "typing":
-
-            for slot in tdict[effect.target]:
-                if slot.typing == effect.target_condition_instance:
-                    targets.append(f"ACTIVE" if slot == player.active else str(player.bench.index(slot)))
-    
-        elif effect.target_condition == "healable":
-
-            for slot in tdict[effect.target]:
-                if slot.hp < slot.max_hp:
-                    targets.append(f"ACTIVE" if slot == player.active else str(player.bench.index(slot)))
-    
-    else:
-        for slot in tdict[effect.target]:
-            targets.append(f"ACTIVE" if slot == player.active else str(player.bench.index(slot)))
+    for slot in slots:
+        if slot is None:
+            continue
+        if all(_matches(slot, c) for c in effect.target_conditions):
+            targets.append("ACTIVE" if slot is player.active else str(player.bench.index(slot)))
 
     return targets

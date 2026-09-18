@@ -31,7 +31,9 @@ BUTTERFREE = Pokemon(
             effect_type="heal",
             amount=20,
             target="all_own",
-            target_condition="healable"
+        target_conditions=[
+            {"type": "healable"},
+        ],
         )
     )
 )

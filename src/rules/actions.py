@@ -101,7 +101,7 @@ Actions:
                 if state.supporter_played:
                     continue
 
-            if card.effect.target_condition:
+            if card.effect.target_conditions:
                 targets = get_effect_targets(state, card.effect)
 
                 if not targets: #the effect can't be applied anywhere -> card can't be played
@@ -368,7 +368,7 @@ Apply start-of-turn effects (mutates the state in place).
     
     player.energy_available = True
     player.current_energy_type = player.next_energy_type
-    player.next_energy_type = choice(player.energy_types)
+    player.next_energy_type = state.rng.choice(player.energy_types)
 
     state.supporter_played = False
 
@@ -404,7 +404,7 @@ Apply start-of-turn effects (mutates the state in place).
                     return state
 
         if player.active.special_conditions & (1 << 1): #sleep
-            if choice([True, False]):  # Heads = wake up
+            if state.rng.choice([True, False]):  # Heads = wake up
                 player.active.special_conditions -= 2
                 if debug:
                     print(f"{player.active.name} woke up!")
@@ -412,13 +412,17 @@ Apply start-of-turn effects (mutates the state in place).
                 if debug:
                     print(f"{player.active.name} is still asleep!")
 
+    if state.is_first_turn:
+        player.energy_available = False
+        state.is_first_turn = False
+        player.active.turns_in_play = -1
+        opponent.active.turns_in_play = -1
+
+        print(f"Player 1's hand: {[card.name for card in state.player1.hand]}, Player 2's hand: {[card.name for card in state.player2.hand]}")
+
     if player.active:    
         player.active.turns_in_play += 1
     for pokemon in player.bench:
         pokemon.turns_in_play += 1
-
-    if state.is_first_turn:
-        player.energy_available = False
-        state.is_first_turn = False
 
     return state

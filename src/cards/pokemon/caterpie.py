@@ -23,8 +23,9 @@ CATERPIE = Pokemon(
             effect=Effect(
                 effect_type="deck_to_hand",
                 amount=1,
-                target_condition="typing",
-                target_condition_instance="Grass"
+            target_conditions=[
+                {"type": "typing", "value": "Grass"},
+            ],
             )
         )
     ]

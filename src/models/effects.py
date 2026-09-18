@@ -168,7 +168,7 @@ Amplifies the damage of an attack based on the amount of heads in {amount} coin 
     heads = 0
 
     for i in range(effect.amount):
-        if choice([True, False]):
+        if state.rng.choice([True, False]):
             heads += 1
 
     if debug: print(f"{heads} heads out of {effect.amount} flips")
