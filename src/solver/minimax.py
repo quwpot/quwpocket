@@ -2,74 +2,97 @@ from src.models.game_state import GameState
 from src.rules.actions import apply_action, generate_actions
 from src.solver.evaluator import evaluate_from_perspective
 from src.solver.move_ordering import order_moves
+from time import perf_counter
 
 _node_count = 0
+_time_apply = 0
+_time_generate = 0
+_time_order = 0
 
-def search(state: GameState, depth: int, alpha=float('-inf'), beta=float('inf'), player=None, is_maximizing: bool = True, debug: bool = False):
 
-    global _node_count
+def search(state: GameState, depth: int,
+           alpha=float('-inf'), beta=float('inf'),
+           player=None, is_maximizing: bool = True, debug: bool = False):
+
+    global _node_count, _time_apply, _time_generate, _time_order
 
     _node_count += 1
-    
-    if player == None: player = state.current_player
+
+    if player is None:
+        player = state.current_player
 
     if depth == 0 or state.game_over:
         return evaluate_from_perspective(state, player), []
 
-    if is_maximizing: # Hero's Turn
-        best_score = float('-inf')
-        best_first_move = []
+    # Sign flips depending on whose turn it is
+    best_score = float('-inf') if is_maximizing else float('inf')
+    best_first_move = []
 
-        for action in order_moves(generate_actions(state)):
-            nstate = apply_action(state, action)
+    t = perf_counter()
+    actions = generate_actions(state)
+    _time_generate += perf_counter() - t
 
-            turn_ended = (nstate.current_player != state.current_player)
+    t = perf_counter()
+    ordered = order_moves(actions)
+    _time_order += perf_counter() - t
 
-            if turn_ended:
-                score,_ = search(nstate, depth-1, alpha, beta, player, False)
+    for action in ordered:
+
+        t = perf_counter()
+        nstate = apply_action(state, action)
+        _time_apply += perf_counter() - t
+
+        turn_ended = (nstate.current_player != state.current_player)
+        next_depth = depth - 1 if turn_ended else depth
+        next_is_max = (not is_maximizing) if turn_ended else is_maximizing
+
+        score, _ = search(nstate, next_depth, alpha, beta, player, next_is_max)
+
+        if debug:
+            side = 'Hero' if is_maximizing else 'Villain'
+            print(f"[depth={depth}] Score for {action} from {side} is {score}.")
+
+        # Both branches collapse to: "is this score better than the current best?"
+        if (is_maximizing and score > best_score) or \
+           (not is_maximizing and score < best_score):
+            best_score = score
+            best_first_move = action
+
+            # Update the bound that corresponds to this side
+            if is_maximizing:
+                alpha = max(alpha, score)
             else:
-                score,_ = search(nstate, depth, alpha, beta, player, True)
+                beta = min(beta, score)
 
-            if debug: print(f"[depth={depth}] Score for {action} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
+            if alpha >= beta:
+                break
 
-            if score > best_score:
-                best_score = score
-                alpha = score
-                best_first_move = action
-                if alpha >= beta: break
+    return best_score, best_first_move
 
-        return best_score, best_first_move
-
-    else:
-        best_score = float('inf')
-        best_first_move = []
-
-        for action in order_moves(generate_actions(state)):
-            nstate = apply_action(state, action)
-
-            turn_ended = (nstate.current_player != state.current_player)
-
-            if turn_ended:
-                score,_ = search(nstate, depth-1, alpha, beta, player, True)
-            else:
-                score,_ = search(nstate, depth, alpha, beta, player, False)
-
-            if debug: print(f"[depth={depth}] Score for {action} from {'Hero' if is_maximizing else 'Villain'} is {score}.")
-
-            if score < best_score:
-                best_score = score
-                beta = score
-                if beta <= alpha: break
-
-        return best_score, best_first_move
 
 def find_best_move(state, depth):
     score, action = search(state, depth, player=state.current_player)
     return action
 
+
 def get_node_count():
     return _node_count
+
 
 def reset_node_count():
     global _node_count
     _node_count = 0
+
+
+def reset_timers():
+    global _time_apply, _time_generate, _time_order
+    _time_apply = 0
+    _time_generate = 0
+    _time_order = 0
+
+def get_time_apply():
+    return _time_apply
+def get_time_generate():
+    return _time_generate
+def get_time_order():
+    return _time_order

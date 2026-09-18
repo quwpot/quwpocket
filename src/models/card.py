@@ -54,6 +54,7 @@ Attributes:
     attached_energy: list[str] = field(default_factory=list)
     attacks: list[Attack] = field(default_factory=list)
     ability : Optional[Ability] = None
+    ability_used_this_turn: bool = False
 
     def __repr__(self):
         return f"Pokemon('{self.name}{'(ex)' if self.is_ex else ''}': HP = {self.hp}, damage = {self.max_hp - self.hp}, {'attached energy = ' + str(self.attached_energy) if self.attached_energy else 'no energy'}"

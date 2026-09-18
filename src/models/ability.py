@@ -7,4 +7,3 @@ class Ability:
     effect: Effect  # What the ability does
     description: Optional[str] = ""
     req_active: bool = False #does the pokemon have to be in active position for the ability to become usable
-    used_this_turn: bool = False  # For once_per_turn abilities

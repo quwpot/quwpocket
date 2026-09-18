@@ -1,4 +1,4 @@
-from copy import deepcopy
+from src.rules.copy import copy_state, copy_effect, copy_trainer, copy_ability, copy_pokemon
 from src.models.game_state import GameState
 from src.models.effects import *
 from src.utils.energy_utils import can_use_attack
@@ -68,7 +68,7 @@ Actions:
                 actions.append("ATTACH_ENERGY_TO_SLOT_ACTIVE")
 
             if player.active.ability and player.active.ability.ability_type not in ["passive"]:
-                if (player.active.ability.ability_type == "once_per_turn" and not player.active.ability.used_this_turn) or player.active.ability.ability_type == "infinite":
+                if (player.active.ability.ability_type == "once_per_turn" and not player.active.ability_used_this_turn) or player.active.ability.ability_type == "infinite":
                     targets = get_effect_targets(state, player.active.ability.effect)
                     if targets:
                         if player.active.ability.effect.target != "all_own":
@@ -123,7 +123,7 @@ Actions:
         if card.ability:
             if not card.ability.req_active:
 
-                if not card.ability.used_this_turn and card.ability.ability_type == "once_per_turn" or card.ability.ability_type == "infinite":
+                if not card.ability_used_this_turn and card.ability.ability_type == "once_per_turn" or card.ability.ability_type == "infinite":
                     targets = get_effect_targets(state, card.ability.effect)
                     if targets:
                         if card.ability.effect.target != "all_own":
@@ -188,6 +188,7 @@ Actions:
             player.active.attached_energy.append(player.current_energy_type)
 
         else:
+            player.bench[int(slot)] = player.bench[int(slot)]
             player.bench[int(slot)].attached_energy.append(player.current_energy_type)
 
         player.current_energy_type = None
@@ -204,7 +205,7 @@ Actions:
 
         if attack.effect:
 
-            neffect = deepcopy(attack.effect)
+            neffect = copy_effect(attack.effect)
             neffect.target = target
 
             nstate = apply_effect(nstate, neffect)
@@ -241,7 +242,7 @@ Actions:
 
         if card.card_type == "trainer":
      
-            ncard = deepcopy(card)
+            ncard = copy_trainer(card)
             ncard.effect.target = target
 
             nstate = apply_effect(nstate, ncard.effect)
@@ -257,19 +258,19 @@ Actions:
         elif card.card_type in ["pokemon", "fossil"]:
     
             if card.stage == "basic":
-                player.bench.append(player.hand.pop(card_index))
+                player.bench.append(copy_pokemon(player.hand.pop(card_index)))
 
             else:
     
                 if target == "ACTIVE":
                     temp = player.active
-                    player.active = player.hand.pop(card_index)
+                    player.active = copy_pokemon(player.hand.pop(card_index))
                     player.active.hp = player.active.max_hp - (temp.max_hp - temp.hp)
                     player.active.attached_energy = temp.attached_energy
 
                 else:
                     temp = player.bench.pop(int(target))
-                    card = player.hand.pop(card_index)
+                    card = copy_pokemon(player.hand.pop(card_index))
                     player.bench.insert(int(target), card)
                     player.bench[int(target)].hp = player.bench[int(target)].max_hp - (temp.max_hp - temp.hp)
                     player.bench[int(target)].attached_energy = temp.attached_energy
@@ -285,7 +286,7 @@ Actions:
             player.active.attached_energy.pop() #what energy can theoretically be chosen by the player - will implement later
 
         temp = player.active
-        player.active = player.bench.pop(slot_index)
+        player.active = copy_pokemon(player.bench.pop(slot_index))
         player.bench.insert(slot_index, temp)
 
     elif action.startswith("DISCARD_FOSSIL_"):
@@ -307,7 +308,7 @@ Actions:
         else:
             ability = player.bench[int(slot)].ability
 
-        nability = deepcopy(ability)
+        nability = copy_ability(ability)
         nability.effect.target = target
 
         nstate = apply_effect(nstate, nability.effect)
@@ -316,16 +317,16 @@ Actions:
 
         # Set used_this_turn on the NEW state's ability
         if slot == "ACTIVE":
-            player.active.ability.used_this_turn = True
+            player.active.ability_used_this_turn = True
         else:
-            player.bench[int(slot)].ability.used_this_turn = True
+            player.bench[int(slot)].ability_used_this_turn = True
 
     elif action.startswith("PROMOTE_FROM_BENCH_"):
         slot = int(action.split("_")[-1])
         player = nstate.player1 if nstate.pending_player == 1 else nstate.player2
     
         # Move Pokemon from bench to active
-        player.active = player.bench.pop(slot)
+        player.active = copy_pokemon(player.bench.pop(slot))
         nstate.pending_promotion = False
         nstate.pending_player = 0
 
@@ -337,14 +338,6 @@ Actions:
         raise Exception("Invalid Action")
 
     return nstate
-
-def copy_state(state: GameState) -> GameState:
-
-    """
-Duplicate a GameState to modify it whilst not breaking search algorithms later.
-    """
-
-    return deepcopy(state)
 
 def start_turn(state: GameState, debug=False) -> GameState:
     
@@ -373,10 +366,10 @@ Apply start-of-turn effects (mutates the state in place).
     state.supporter_played = False
 
     if player.active.ability:
-        player.active.ability.used_this_turn = False
+        player.active.ability_used_this_turn = False
     for pokemon in player.bench:
         if pokemon.ability:
-            pokemon.ability.used_this_turn = False
+            pokemon.ability_used_this_turn = False
 
     player.damage_boost = 0
 

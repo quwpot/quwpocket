@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
-from copy import deepcopy
 from random import randrange, choice, Random
 
 @dataclass
@@ -79,8 +78,8 @@ Helper function that sets up a game by initializing a default GameState.
 
     from src.rules.actions import start_turn
 
-    p1 = PlayerState(energy_types=deepcopy(energy_types), deck=deepcopy(player1_deck))
-    p2 = PlayerState(energy_types=deepcopy(energy_types), deck=deepcopy(player2_deck))
+    p1 = PlayerState(energy_types=list(energy_types), deck=list(player1_deck))
+    p2 = PlayerState(energy_types=list(energy_types), deck=list(player2_deck))
 
     for player in [p1, p2]:
 

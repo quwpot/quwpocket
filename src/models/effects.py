@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from copy import deepcopy
 from typing import Optional
-from random import choice
 from src.models.game_state import GameState
 from src.models.card import Trainer
 
@@ -14,8 +12,7 @@ Generic heal effect.
 2. How much should be healed?
     """
 
-    nstate = deepcopy(state)
-    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
+    player = state.player1 if state.current_player == 1 else state.player2
 
     if not effect.target == "all_own":
 
@@ -38,7 +35,7 @@ Generic heal effect.
             if card.hp > card.max_hp:
                 card.hp = card.max_hp
 
-    return nstate
+    return state
 
 def apply_draw(state: GameState, effect: Effect) -> GameState:
     
@@ -48,15 +45,14 @@ Generic draw effect.
 1. How many cards should get drawn
     """
 
-    nstate = deepcopy(state)
-    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
+    player = state.player1 if state.current_player == 1 else state.player2
 
     for i in range(effect.amount):
         if not player.deck:      
             break
         player.hand.append(player.deck.pop())
 
-    return nstate
+    return state
 
 def apply_attach_energy(state: GameState, effect: Effect) -> GameState:
     
@@ -68,8 +64,7 @@ Generic energy attach effect.
 3. What Type should be attached?
     """
 
-    nstate = deepcopy(state)
-    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
+    player = state.player1 if state.current_player == 1 else state.player2
 
     if effect.target == "ACTIVE":
         for i in range(effect.amount):
@@ -79,7 +74,7 @@ Generic energy attach effect.
         for i in range(effect.amount):
             player.bench[int(effect.target)].attached_energy.append(effect.instance)
     
-    return nstate
+    return state
 
 def apply_damage_boost(state: GameState, effect: Effect) -> GameState:
 
@@ -89,10 +84,9 @@ Generic Damage Boost effect.
 1. How much additional damage?
     """
 
-    nstate = deepcopy(state)
-    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
+    player = state.player1 if state.current_player == 1 else state.player2
     player.damage_boost += effect.amount
-    return nstate
+    return state
 
 def apply_watch_opponent_hand_cards(state: GameState, effect: Effect) -> GameState:
 
@@ -100,7 +94,7 @@ def apply_watch_opponent_hand_cards(state: GameState, effect: Effect) -> GameSta
 Reveals {amount} cards out of the opponents Hand.
     """
 
-    #just watching, not modifying anything so no need for deepcopy()
+    #just watching, not modifying anything so no need for copy_state()
 
     opponent = state.player1 if state.current_player == 2 else state.player2
     for i in range(min(effect.amount, len(opponent.hand))):
@@ -113,8 +107,7 @@ def apply_discard_energy(state: GameState, effect: Effect) -> GameState:
 Discards {amount} energy from a specified Pokemon.
     """
 
-    nstate = deepcopy(state)
-    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
+    player = state.player1 if state.current_player == 1 else state.player2
 
     target = effect.target
     if target == "active":
@@ -124,7 +117,7 @@ Discards {amount} energy from a specified Pokemon.
                     player.active.attached_energy.remove(effect.target_condition_instance)
                 except ValueError:
                     break
-    return nstate
+    return state
 
 def apply_deck_to_hand(state: GameState, effect: Effect) -> GameState:
 
@@ -132,8 +125,7 @@ def apply_deck_to_hand(state: GameState, effect: Effect) -> GameState:
 Puts {amount} specific cards from deck into players' hand.
     """
 
-    nstate = deepcopy(state)
-    player = nstate.player1 if nstate.current_player == 1 else nstate.player2
+    player = state.player1 if state.current_player == 1 else state.player2
 
     choices = []
 
@@ -152,9 +144,9 @@ Puts {amount} specific cards from deck into players' hand.
     for i in range(effect.amount):
         if not choices:
             break
-        player.hand.append(choices.pop(randrange(len(choices) + 1)))
+        player.hand.append(choices.pop(state.rng.randrange(len(choices) + 1)))
 
-    return nstate
+    return state
 
 def apply_coin_flip_bonus_damage(state: GameState, effect: Effect, debug: bool = False) -> GameState:
 
@@ -162,8 +154,7 @@ def apply_coin_flip_bonus_damage(state: GameState, effect: Effect, debug: bool =
 Amplifies the damage of an attack based on the amount of heads in {amount} coin flips.
     """
 
-    nstate = deepcopy(state)
-    opponent = nstate.player2 if nstate.current_player == 1 else nstate.player1
+    opponent = state.player2 if state.current_player == 1 else state.player1
 
     heads = 0
 
@@ -175,7 +166,7 @@ Amplifies the damage of an attack based on the amount of heads in {amount} coin 
 
     opponent.active.hp -= (heads * effect.instance)
 
-    return nstate
+    return state
 
 def apply_switch_opponent_active(state: GameState, effect: Effect) -> GameState:
 
@@ -183,8 +174,7 @@ def apply_switch_opponent_active(state: GameState, effect: Effect) -> GameState:
 Switches the opponent's active Pokemon with a target Benched Pokemon.
     """
 
-    nstate = deepcopy(state)
-    opponent = nstate.player2 if nstate.current_player == 1 else nstate.player1
+    opponent = state.player2 if state.current_player == 1 else state.player1
 
     temp = opponent.active
 
@@ -192,7 +182,7 @@ Switches the opponent's active Pokemon with a target Benched Pokemon.
 
     opponent.bench.insert(int(effect.target), temp)
 
-    return nstate
+    return state
 
 def apply_special_condition(state: GameState, effect: Effect) -> GameState:
 
@@ -200,8 +190,7 @@ def apply_special_condition(state: GameState, effect: Effect) -> GameState:
 Gives the target a designated special condition.
     """
 
-    nstate = deepcopy(state)
-    opponent = nstate.player2 if nstate.current_player == 1 else nstate.player1
+    opponent = state.player2 if state.current_player == 1 else state.player1
 
     
     condition_dict = {
@@ -210,6 +199,6 @@ Gives the target a designated special condition.
     }
 
     if effect.target == "opponent":
-        opponent.active.special_conditions | (1 << condition_dict[effect.instance])
+        opponent.active.special_conditions |= (1 << condition_dict[effect.instance])
 
-    return nstate
+    return state
